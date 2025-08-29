@@ -74,7 +74,7 @@ class OpenAILLM(LLMInterface):
             "o3-", "o3",  # o3, o3-mini, o3-pro  
             "o4-",        # o4-mini
             # GPT-5 series are also reasoning models
-            "gpt-5-", "gpt-5"  # gpt-5, gpt-5-mini, gpt-5-nano
+            "gpt-5-", "gpt-5",  # gpt-5, gpt-5-mini, gpt-5-nano
             # The GPT OSS series are also reasoning models
             "gpt-oss-120b", "gpt-oss-20b"
         )
