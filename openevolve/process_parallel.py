@@ -8,7 +8,7 @@ import multiprocessing as mp
 import pickle
 import signal
 import time
-from concurrent.futures import ProcessPoolExecutor, Future
+from concurrent.futures import ProcessPoolExecutor, Future, TimeoutError as FutureTimeoutError
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -454,7 +454,9 @@ class ProcessParallelController:
             future = pending_futures.pop(completed_iteration)
 
             try:
-                result = future.result()
+                # Use evaluator timeout + buffer to gracefully handle stuck processes
+                timeout_seconds = self.config.evaluator.timeout + 30
+                result = future.result(timeout=timeout_seconds)
 
                 if result.error:
                     logger.warning(f"Iteration {completed_iteration} error: {result.error}")
@@ -612,6 +614,14 @@ class ProcessParallelController:
                                 )
                                 break
 
+            except FutureTimeoutError:
+                logger.error(
+                    f"⏰ Iteration {completed_iteration} timed out after {timeout_seconds}s "
+                    f"(evaluator timeout: {self.config.evaluator.timeout}s + 30s buffer). "
+                    f"Canceling future and continuing with next iteration."
+                )
+                # Cancel the future to clean up the process
+                future.cancel()
             except Exception as e:
                 logger.error(f"Error processing result from iteration {completed_iteration}: {e}")
 
