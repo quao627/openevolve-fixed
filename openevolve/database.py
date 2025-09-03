@@ -65,6 +65,9 @@ class Program:
     # Metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    # Prompts
+    prompts: Optional[Dict[str, Any]] = None
+
     # Artifact storage
     artifacts_json: Optional[str] = None  # JSON-serialized small artifacts
     artifact_dir: Optional[str] = None  # Path to large artifact files
