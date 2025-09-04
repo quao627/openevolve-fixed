@@ -247,7 +247,7 @@ OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes
 ## 🛠 Installation & Setup
 
 ### Requirements
-- **Python**: 3.9+ 
+- **Python**: 3.10+ 
 - **LLM Access**: Any OpenAI-compatible API
 - **Optional**: Docker for containerized runs
 
