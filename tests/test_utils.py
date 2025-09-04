@@ -8,7 +8,8 @@ import sys
 import time
 import subprocess
 import requests
-from typing import Optional
+import socket
+from typing import Optional, Tuple
 from openai import OpenAI
 from openevolve.config import Config, LLMModelConfig
 
@@ -16,6 +17,20 @@ from openevolve.config import Config, LLMModelConfig
 TEST_MODEL = "google/gemma-3-270m-it"
 DEFAULT_PORT = 8000
 DEFAULT_BASE_URL = f"http://localhost:{DEFAULT_PORT}/v1"
+
+def find_free_port(start_port: int = 8000, max_tries: int = 100) -> int:
+    """Find a free port starting from start_port"""
+    for port in range(start_port, start_port + max_tries):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.bind(('localhost', port))
+            sock.close()
+            return port
+        except OSError:
+            continue
+        finally:
+            sock.close()
+    raise RuntimeError(f"Could not find free port in range {start_port}-{start_port + max_tries}")
 
 def setup_test_env():
     """Set up test environment with local inference"""
@@ -26,42 +41,62 @@ def get_test_client(base_url: str = DEFAULT_BASE_URL) -> OpenAI:
     """Get OpenAI client configured for local optillm"""
     return OpenAI(api_key="optillm", base_url=base_url)
 
-def start_test_server(model: str = TEST_MODEL, port: int = DEFAULT_PORT) -> subprocess.Popen:
+def start_test_server(model: str = TEST_MODEL, port: Optional[int] = None) -> Tuple[subprocess.Popen, int]:
     """
     Start optillm server for testing
-    Returns the process handle
+    Returns tuple of (process_handle, actual_port_used)
     """
+    if port is None:
+        port = find_free_port()
+    
     # Set environment for local inference
     env = os.environ.copy()
     env["OPTILLM_API_KEY"] = "optillm"
+    
+    print(f"Starting optillm server on port {port}...")
     
     # Start server
     proc = subprocess.Popen([
         "optillm",
         "--model", model,
         "--port", str(port)
-    ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     
     # Wait for server to start
-    for _ in range(30):
+    for i in range(30):
         try:
             response = requests.get(f"http://localhost:{port}/health", timeout=2)
             if response.status_code == 200:
-                break
-        except:
+                print(f"✅ optillm server started successfully on port {port}")
+                return proc, port
+        except Exception as e:
+            if i < 5:  # Only print for first few attempts to avoid spam
+                print(f"Attempt {i+1}: Waiting for server... ({e})")
             pass
         time.sleep(1)
-    else:
-        # Server didn't start in time
-        try:
-            proc.terminate()
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-        raise RuntimeError(f"optillm server failed to start on port {port}")
     
-    return proc
+    # Server didn't start in time - collect error info
+    try:
+        stdout, stderr = proc.communicate(timeout=2)
+        error_msg = f"optillm server failed to start on port {port}"
+        if stdout:
+            error_msg += f"\nSTDOUT: {stdout[:500]}"
+        if stderr:
+            error_msg += f"\nSTDERR: {stderr[:500]}"
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        stdout, stderr = proc.communicate()
+        error_msg = f"optillm server failed to start on port {port} (timeout)"
+    
+    # Clean up
+    try:
+        proc.terminate()
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+    
+    raise RuntimeError(error_msg)
 
 def stop_test_server(proc: subprocess.Popen):
     """Stop the test server"""

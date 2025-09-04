@@ -27,17 +27,18 @@ from test_utils import (
 def optillm_server():
     """Start optillm server for the test session"""
     # Check if server is already running (for development)
-    if is_server_running():
+    if is_server_running(8000):
         print("Using existing optillm server at localhost:8000")
-        yield None  # Server already running, don't manage it
+        yield {"proc": None, "port": 8000}  # Server already running, don't manage it
         return
     
     print("Starting optillm server for integration tests...")
     proc = None
+    port = None
     try:
-        proc = start_test_server()
-        print("optillm server started successfully")
-        yield proc
+        proc, port = start_test_server()
+        print(f"optillm server started successfully on port {port}")
+        yield {"proc": proc, "port": port}
     except Exception as e:
         print(f"Failed to start optillm server: {e}")
         raise
@@ -51,7 +52,8 @@ def optillm_server():
 @pytest.fixture
 def evolution_config(optillm_server):
     """Get config for evolution tests"""
-    return get_integration_config()
+    port = optillm_server["port"]
+    return get_integration_config(port)
 
 
 @pytest.fixture
