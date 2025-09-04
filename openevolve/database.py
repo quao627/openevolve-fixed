@@ -108,8 +108,10 @@ class ProgramDatabase:
         # In-memory program storage
         self.programs: Dict[str, Program] = {}
 
-        # Feature grid for MAP-Elites
-        self.feature_map: Dict[str, str] = {}
+        # Per-island feature grids for MAP-Elites
+        self.island_feature_maps: List[Dict[str, str]] = [
+            {} for _ in range(config.num_islands)
+        ]
 
         # Handle both int and dict types for feature_bins
         if isinstance(config.feature_bins, int):
@@ -208,66 +210,6 @@ class ProgramDatabase:
         # Calculate feature coordinates for MAP-Elites
         feature_coords = self._calculate_feature_coords(program)
 
-        # Add to feature map (replacing existing if better)
-        feature_key = self._feature_coords_to_key(feature_coords)
-        should_replace = feature_key not in self.feature_map
-
-        if not should_replace:
-            # Check if the existing program still exists before comparing
-            existing_program_id = self.feature_map[feature_key]
-            if existing_program_id not in self.programs:
-                # Stale reference, replace it
-                should_replace = True
-                logger.debug(
-                    f"Replacing stale program reference {existing_program_id} in feature map"
-                )
-            else:
-                # Program exists, compare fitness
-                should_replace = self._is_better(program, self.programs[existing_program_id])
-
-        if should_replace:
-            # Log significant MAP-Elites events
-            coords_dict = {
-                self.config.feature_dimensions[i]: feature_coords[i]
-                for i in range(len(feature_coords))
-            }
-
-            if feature_key not in self.feature_map:
-                # New cell occupation
-                logger.info("New MAP-Elites cell occupied: %s", coords_dict)
-                # Check coverage milestone
-                total_possible_cells = self.feature_bins ** len(self.config.feature_dimensions)
-                coverage = (len(self.feature_map) + 1) / total_possible_cells
-                if coverage in [0.1, 0.25, 0.5, 0.75, 0.9]:
-                    logger.info(
-                        "MAP-Elites coverage reached %.1f%% (%d/%d cells)",
-                        coverage * 100,
-                        len(self.feature_map) + 1,
-                        total_possible_cells,
-                    )
-            else:
-                # Cell replacement - existing program being replaced
-                existing_program_id = self.feature_map[feature_key]
-                if existing_program_id in self.programs:
-                    existing_program = self.programs[existing_program_id]
-                    new_fitness = get_fitness_score(program.metrics, self.config.feature_dimensions)
-                    existing_fitness = get_fitness_score(
-                        existing_program.metrics, self.config.feature_dimensions
-                    )
-                    logger.info(
-                        "MAP-Elites cell improved: %s (fitness: %.3f -> %.3f)",
-                        coords_dict,
-                        existing_fitness,
-                        new_fitness,
-                    )
-
-                    # use MAP-Elites to manage archive
-                    if existing_program_id in self.archive:
-                        self.archive.discard(existing_program_id)
-                        self.archive.add(program.id)
-
-            self.feature_map[feature_key] = program.id
-
         # Determine target island
         # If target_island is not specified and program has a parent, inherit parent's island
         if target_island is None and program.parent_id:
@@ -297,6 +239,71 @@ class ProgramDatabase:
             island_idx = self.current_island
 
         island_idx = island_idx % len(self.islands)  # Ensure valid island
+
+        # Add to island-specific feature map (replacing existing if better)
+        feature_key = self._feature_coords_to_key(feature_coords)
+        island_feature_map = self.island_feature_maps[island_idx]
+        should_replace = feature_key not in island_feature_map
+
+        if not should_replace:
+            # Check if the existing program still exists before comparing
+            existing_program_id = island_feature_map[feature_key]
+            if existing_program_id not in self.programs:
+                # Stale reference, replace it
+                should_replace = True
+                logger.debug(
+                    f"Replacing stale program reference {existing_program_id} in island {island_idx} feature map"
+                )
+            else:
+                # Program exists, compare fitness
+                should_replace = self._is_better(program, self.programs[existing_program_id])
+
+        if should_replace:
+            # Log significant MAP-Elites events
+            coords_dict = {
+                self.config.feature_dimensions[i]: feature_coords[i]
+                for i in range(len(feature_coords))
+            }
+
+            if feature_key not in island_feature_map:
+                # New cell occupation in this island
+                logger.info("New MAP-Elites cell occupied in island %d: %s", island_idx, coords_dict)
+                # Check coverage milestone for this island
+                total_possible_cells = self.feature_bins ** len(self.config.feature_dimensions)
+                island_coverage = (len(island_feature_map) + 1) / total_possible_cells
+                if island_coverage in [0.1, 0.25, 0.5, 0.75, 0.9]:
+                    logger.info(
+                        "Island %d MAP-Elites coverage reached %.1f%% (%d/%d cells)",
+                        island_idx,
+                        island_coverage * 100,
+                        len(island_feature_map) + 1,
+                        total_possible_cells,
+                    )
+            else:
+                # Cell replacement - existing program being replaced in this island
+                existing_program_id = island_feature_map[feature_key]
+                if existing_program_id in self.programs:
+                    existing_program = self.programs[existing_program_id]
+                    new_fitness = get_fitness_score(program.metrics, self.config.feature_dimensions)
+                    existing_fitness = get_fitness_score(
+                        existing_program.metrics, self.config.feature_dimensions
+                    )
+                    logger.info(
+                        "Island %d MAP-Elites cell improved: %s (fitness: %.3f -> %.3f)",
+                        island_idx,
+                        coords_dict,
+                        existing_fitness,
+                        new_fitness,
+                    )
+
+                    # use MAP-Elites to manage archive
+                    if existing_program_id in self.archive:
+                        self.archive.discard(existing_program_id)
+                        self.archive.add(program.id)
+
+            island_feature_map[feature_key] = program.id
+
+        # Add to island
         self.islands[island_idx].add(program.id)
 
         # Track which island this program belongs to
@@ -506,7 +513,7 @@ class ProgramDatabase:
 
         # Save metadata
         metadata = {
-            "feature_map": self.feature_map,
+            "island_feature_maps": self.island_feature_maps,
             "islands": [list(island) for island in self.islands],
             "archive": list(self.archive),
             "best_program_id": self.best_program_id,
@@ -541,7 +548,7 @@ class ProgramDatabase:
             with open(metadata_path, "r") as f:
                 metadata = json.load(f)
 
-            self.feature_map = metadata.get("feature_map", {})
+            self.island_feature_maps = metadata.get("island_feature_maps", [{} for _ in range(self.config.num_islands)])
             saved_islands = metadata.get("islands", [])
             self.archive = set(metadata.get("archive", []))
             self.best_program_id = metadata.get("best_program_id")
@@ -625,13 +632,16 @@ class ProgramDatabase:
         original_archive_size = len(self.archive)
         self.archive = {pid for pid in self.archive if pid in self.programs}
 
-        # Clean up feature_map - remove missing programs
+        # Clean up island_feature_maps - remove missing programs
         feature_keys_to_remove = []
-        for key, program_id in self.feature_map.items():
-            if program_id not in self.programs:
-                feature_keys_to_remove.append(key)
-        for key in feature_keys_to_remove:
-            del self.feature_map[key]
+        for island_idx, island_map in enumerate(self.island_feature_maps):
+            island_keys_to_remove = []
+            for key, program_id in island_map.items():
+                if program_id not in self.programs:
+                    island_keys_to_remove.append(key)
+                    feature_keys_to_remove.append((island_idx, key))
+            for key in island_keys_to_remove:
+                del island_map[key]
 
         # Clean up island best programs - remove stale references
         self._cleanup_stale_island_bests()
@@ -657,7 +667,7 @@ class ProgramDatabase:
             )
 
         if feature_keys_to_remove:
-            logger.info(f"Removed {len(feature_keys_to_remove)} missing programs from feature map")
+            logger.info(f"Removed {len(feature_keys_to_remove)} missing programs from island feature maps")
 
         logger.info(f"Reconstructed islands: restored {restored_programs} programs to islands")
 
@@ -1345,13 +1355,14 @@ class ProgramDatabase:
             if program_id in self.programs:
                 del self.programs[program_id]
 
-            # Remove from feature map
-            keys_to_remove = []
-            for key, pid in self.feature_map.items():
-                if pid == program_id:
-                    keys_to_remove.append(key)
-            for key in keys_to_remove:
-                del self.feature_map[key]
+            # Remove from island feature maps
+            for island_idx, island_map in enumerate(self.island_feature_maps):
+                keys_to_remove = []
+                for key, pid in island_map.items():
+                    if pid == program_id:
+                        keys_to_remove.append(key)
+                for key in keys_to_remove:
+                    del island_map[key]
 
             # Remove from islands
             for island in self.islands:
@@ -1445,9 +1456,10 @@ class ProgramDatabase:
                     continue
 
                 for target_island in target_islands:
-                    # Create a copy for migration (to avoid removing from source)
+                    # Create a copy for migration with simple new UUID
+                    import uuid
                     migrant_copy = Program(
-                        id=f"{migrant.id}_migrant_{target_island}",
+                        id=str(uuid.uuid4()),
                         code=migrant.code,
                         language=migrant.language,
                         parent_id=migrant.id,
