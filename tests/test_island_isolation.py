@@ -99,14 +99,14 @@ class TestIslandIsolation(unittest.TestCase):
         # Track which islands were sampled
         sampled_islands = []
 
-        def mock_sample(num_inspirations=None):
-            # Record which island was sampled
-            sampled_islands.append(self.database.current_island)
+        def mock_sample_from_island(island_id, num_inspirations=None):
+            # Record which island was sampled (using the island_id parameter)
+            sampled_islands.append(island_id)
             # Return mock parent and inspirations
             mock_program = Program(id="mock", code="", metrics={})
             return mock_program, []
 
-        with patch.object(self.database, "sample", side_effect=mock_sample):
+        with patch.object(self.database, "sample_from_island", side_effect=mock_sample_from_island):
             with patch.object(controller, "executor"):
                 # Submit iterations for different islands
                 controller._submit_iteration(1, island_id=0)

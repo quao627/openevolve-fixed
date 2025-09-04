@@ -55,12 +55,12 @@ def start_test_server(model: str = TEST_MODEL, port: Optional[int] = None) -> Tu
     
     print(f"Starting optillm server on port {port}...")
     
-    # Start server
+    # Start server (don't capture output to avoid pipe buffer deadlock)
     proc = subprocess.Popen([
         "optillm",
         "--model", model,
         "--port", str(port)
-    ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    ], env=env)
     
     # Wait for server to start
     for i in range(30):
@@ -75,18 +75,9 @@ def start_test_server(model: str = TEST_MODEL, port: Optional[int] = None) -> Tu
             pass
         time.sleep(1)
     
-    # Server didn't start in time - collect error info
-    try:
-        stdout, stderr = proc.communicate(timeout=2)
-        error_msg = f"optillm server failed to start on port {port}"
-        if stdout:
-            error_msg += f"\nSTDOUT: {stdout[:500]}"
-        if stderr:
-            error_msg += f"\nSTDERR: {stderr[:500]}"
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        stdout, stderr = proc.communicate()
-        error_msg = f"optillm server failed to start on port {port} (timeout)"
+    # Server didn't start in time - clean up
+    error_msg = f"optillm server failed to start on port {port}"
+    print(f"❌ {error_msg} - check that optillm is installed and model is available")
     
     # Clean up
     try:
