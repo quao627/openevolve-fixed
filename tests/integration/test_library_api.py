@@ -43,6 +43,7 @@ def _get_library_test_config(port: int = 8000) -> Config:
 class TestLibraryAPIIntegration:
     """Test OpenEvolve library API with real LLM integration"""
 
+    @pytest.mark.slow
     def test_evolve_function_real_integration(
         self,
         optillm_server,
@@ -100,6 +101,7 @@ class TestLibraryAPIIntegration:
         print(f"   Output dir: {result.output_dir}")
         print(f"   Code length: {len(result.best_code)} chars")
 
+    @pytest.mark.slow
     def test_evolve_code_real_integration(
         self,
         optillm_server,
@@ -185,6 +187,7 @@ def fibonacci(n):
         print(f"   Best score: {result.best_score}")
         print(f"   Output dir: {result.output_dir}")
 
+    @pytest.mark.slow
     def test_run_evolution_real_integration(
         self,
         optillm_server,

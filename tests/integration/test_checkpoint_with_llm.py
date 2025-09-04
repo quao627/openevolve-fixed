@@ -10,6 +10,7 @@ from openevolve.controller import OpenEvolve
 class TestCheckpointWithLLM:
     """Test checkpoints with real LLM generation"""
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_checkpoint_intervals_with_real_llm(
         self,
@@ -52,6 +53,7 @@ class TestCheckpointWithLLM:
         if len(controller.database.programs) > 1:  # More than just initial program
             assert len(checkpoint_calls) > 0, "Should have at least one checkpoint call if evolution succeeded"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_checkpoint_resume_functionality(
         self,
@@ -94,6 +96,7 @@ class TestCheckpointWithLLM:
         else:
             print("No checkpoints directory created")
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_final_checkpoint_creation(
         self,
@@ -127,6 +130,7 @@ class TestCheckpointWithLLM:
         # This depends on the controller logic, so we just verify the system didn't crash
         assert len(controller.database.programs) >= 1, "Should have at least the initial program"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_checkpoint_with_best_program_save(
         self,

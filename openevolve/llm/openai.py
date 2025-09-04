@@ -35,11 +35,13 @@ class OpenAILLM(LLMInterface):
         self.random_seed = getattr(model_cfg, "random_seed", None)
 
         # Set up API client
+        # OpenAI client requires max_retries to be int, not None
+        max_retries = self.retries if self.retries is not None else 0
         self.client = openai.OpenAI(
             api_key=self.api_key,
             base_url=self.api_base,
             timeout=self.timeout,
-            max_retries=self.retries,
+            max_retries=max_retries,
         )
 
         # Only log unique models to reduce duplication

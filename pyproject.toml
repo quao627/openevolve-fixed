@@ -49,6 +49,13 @@ disallow_incomplete_defs = true
 [project.scripts]
 openevolve-run = "openevolve.cli:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests requiring external services"
+]
+addopts = "--strict-markers"
+
 [tool.setuptools.packages.find]
 include = ["openevolve*"]
 

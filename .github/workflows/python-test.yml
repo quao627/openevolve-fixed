@@ -77,13 +77,14 @@ jobs:
           OPTILLM_API_KEY: optillm
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
-      - name: Run integration tests
+      - name: Run integration tests (excluding slow tests)
         env:
           OPENAI_API_KEY: optillm
           OPTILLM_API_KEY: optillm
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          pytest tests/integration -v --tb=short
+          # Run only fast integration tests, skip slow tests that require real LLM
+          pytest tests/integration -v --tb=short -m "not slow"
           
       - name: Stop optillm server
         if: always()

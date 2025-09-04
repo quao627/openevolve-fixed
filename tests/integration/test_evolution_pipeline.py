@@ -10,6 +10,7 @@ from openevolve.controller import OpenEvolve
 class TestEvolutionPipeline:
     """Test complete evolution with real LLM generation"""
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_full_evolution_loop(
         self, 
@@ -61,6 +62,7 @@ class TestEvolutionPipeline:
         populated_islands = [i for i, count in island_counts.items() if count > 0]
         assert len(populated_islands) >= 1, "At least one island should have programs"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_island_feature_maps_populated(
         self,
@@ -98,6 +100,7 @@ class TestEvolutionPipeline:
                 assert program_id in controller.database.programs, \
                     f"Program {program_id} in island {island_idx} feature map not found in database"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_evolution_with_small_model_succeeds(
         self,
@@ -134,6 +137,7 @@ class TestEvolutionPipeline:
             # It's okay if no log files - depends on config
             print(f"Found {len(log_files)} log files")
 
+    @pytest.mark.slow
     @pytest.mark.asyncio 
     async def test_best_program_tracking(
         self,
