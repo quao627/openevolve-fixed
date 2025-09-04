@@ -122,22 +122,23 @@ class TestConcurrentIslandAccess(unittest.TestCase):
             print("⚠️ Race condition not reproduced - may need more iterations or different timing")
     
     def test_sequential_island_access_works_correctly(self):
-        """Test that sequential access works without issues"""
+        """Test that sequential access works without issues using safe sampling"""
         results = []
         
         for island_id in range(5):
-            original_island = self.database.current_island
-            self.database.current_island = island_id
-            
             try:
-                parent, inspirations = self.database.sample(num_inspirations=2)
+                parent, inspirations = self.database.sample_from_island(island_id, num_inspirations=2)
                 actual_island = parent.metadata.get("island", -1)
                 results.append({
                     "requested": island_id,
                     "actual": actual_island
                 })
-            finally:
-                self.database.current_island = original_island
+            except Exception as e:
+                print(f"Error sampling from island {island_id}: {e}")
+                results.append({
+                    "requested": island_id,
+                    "actual": -1  # Indicate error
+                })
         
         # All sequential accesses should work correctly
         for result in results:
