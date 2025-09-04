@@ -53,6 +53,10 @@ def start_test_server(model: str = TEST_MODEL, port: Optional[int] = None) -> Tu
     env = os.environ.copy()
     env["OPTILLM_API_KEY"] = "optillm"
     
+    # Pass HF_TOKEN if available (needed for model downloads in CI)
+    if "HF_TOKEN" in os.environ:
+        env["HF_TOKEN"] = os.environ["HF_TOKEN"]
+    
     print(f"Starting optillm server on port {port}...")
     
     # Start server (don't capture output to avoid pipe buffer deadlock)
