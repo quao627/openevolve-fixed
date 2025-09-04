@@ -113,13 +113,18 @@ def is_server_running(port: int = DEFAULT_PORT) -> bool:
 def get_integration_config(port: int = DEFAULT_PORT) -> Config:
     """Get config for integration tests with optillm"""
     config = Config()
-    config.max_iterations = 10  # Small for testing
-    config.checkpoint_interval = 5
+    config.max_iterations = 5  # Very small for CI speed
+    config.checkpoint_interval = 2
     config.database.in_memory = True
     config.evaluator.parallel_evaluations = 2
+    config.evaluator.timeout = 10  # Short timeout for CI
     
     # Disable cascade evaluation to avoid warnings in simple test evaluators
     config.evaluator.cascade_evaluation = False
+    
+    # Set long timeout with no retries for integration tests
+    config.llm.retries = 0  # No retries to fail fast
+    config.llm.timeout = 120  # Long timeout to allow model to respond
     
     # Configure to use optillm server
     base_url = f"http://localhost:{port}/v1"
@@ -129,7 +134,9 @@ def get_integration_config(port: int = DEFAULT_PORT) -> Config:
             name=TEST_MODEL,
             api_key="optillm",
             api_base=base_url,
-            weight=1.0
+            weight=1.0,
+            timeout=120,  # Long timeout
+            retries=0     # No retries
         )
     ]
     

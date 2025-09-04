@@ -14,8 +14,7 @@ from openevolve import run_evolution, evolve_function, evolve_code, evolve_algor
 class TestLibraryAPIIntegration:
     """Test OpenEvolve library API with real LLM integration"""
 
-    @pytest.mark.asyncio
-    async def test_evolve_function_real_integration(
+    def test_evolve_function_real_integration(
         self,
         optillm_server,
         temp_workspace
@@ -44,7 +43,7 @@ class TestLibraryAPIIntegration:
         result = evolve_function(
             simple_multiply,
             test_cases,
-            iterations=3,  # Small number for fast testing
+            iterations=2,  # Very small number for CI speed
             output_dir=str(temp_workspace / "evolve_function_output"),
             cleanup=False  # Keep files for inspection
         )
@@ -71,8 +70,7 @@ class TestLibraryAPIIntegration:
         print(f"   Output dir: {result.output_dir}")
         print(f"   Code length: {len(result.best_code)} chars")
 
-    @pytest.mark.asyncio  
-    async def test_evolve_code_real_integration(
+    def test_evolve_code_real_integration(
         self,
         optillm_server,
         temp_workspace
@@ -136,8 +134,9 @@ def fibonacci(n):
         result = evolve_code(
             initial_code,
             fibonacci_evaluator,
-            iterations=2,  # Small number for fast testing
-            output_dir=str(temp_workspace / "evolve_code_output")
+            iterations=1,  # Minimal for CI speed
+            output_dir=str(temp_workspace / "evolve_code_output"),
+            cleanup=False  # Keep output directory
         )
         
         # Verify result structure
@@ -155,8 +154,7 @@ def fibonacci(n):
         print(f"   Best score: {result.best_score}")
         print(f"   Output dir: {result.output_dir}")
 
-    @pytest.mark.asyncio
-    async def test_run_evolution_real_integration(
+    def test_run_evolution_real_integration(
         self,
         optillm_server,
         temp_workspace
@@ -233,8 +231,9 @@ def evaluate(program_path):
         result = run_evolution(
             initial_program=str(initial_program),
             evaluator=str(evaluator_file),
-            iterations=2,
-            output_dir=str(temp_workspace / "run_evolution_output")
+            iterations=1,  # Minimal for CI speed
+            output_dir=str(temp_workspace / "run_evolution_output"),
+            cleanup=False  # Keep output directory
         )
         
         # Verify result

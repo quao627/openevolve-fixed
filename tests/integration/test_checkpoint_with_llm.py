@@ -20,9 +20,9 @@ class TestCheckpointWithLLM:
         evolution_output_dir
     ):
         """Test checkpoints occur at correct intervals with real evolution"""
-        evolution_config.checkpoint_interval = 3
-        evolution_config.max_iterations = 10
-        evolution_config.evaluator.timeout = 30  # Longer timeout for stability
+        evolution_config.checkpoint_interval = 2
+        evolution_config.max_iterations = 4  # Much smaller for CI speed
+        evolution_config.evaluator.timeout = 15  # Shorter timeout for CI
         
         checkpoint_calls = []
         
@@ -37,15 +37,15 @@ class TestCheckpointWithLLM:
         original_save = controller._save_checkpoint
         controller._save_checkpoint = lambda i: checkpoint_calls.append(i) or original_save(i)
         
-        await controller.run(iterations=10)
+        await controller.run(iterations=4)
         
         # Check that some checkpoints were called
         # Note: Checkpoints only occur on successful iterations
         print(f"Checkpoint calls: {checkpoint_calls}")
         
-        # We expect checkpoints at multiples of 3, but only for successful iterations
-        # So we might see some subset of [3, 6, 9] depending on how many iterations succeeded
-        expected_checkpoints = [3, 6, 9]
+        # We expect checkpoints at multiples of 2, but only for successful iterations
+        # So we might see some subset of [2, 4] depending on how many iterations succeeded
+        expected_checkpoints = [2, 4]
         successful_checkpoints = [cp for cp in expected_checkpoints if cp in checkpoint_calls]
         
         # At least one checkpoint should have occurred if any iterations succeeded

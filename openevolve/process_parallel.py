@@ -34,8 +34,14 @@ class SerializableResult:
     error: Optional[str] = None
 
 
-def _worker_init(config_dict: dict, evaluation_file: str) -> None:
+def _worker_init(config_dict: dict, evaluation_file: str, parent_env: dict = None) -> None:
     """Initialize worker process with necessary components"""
+    import os
+    
+    # Set environment from parent process
+    if parent_env:
+        os.environ.update(parent_env)
+    
     global _worker_config
     global _worker_evaluation_file
     global _worker_evaluator
@@ -327,11 +333,15 @@ class ProcessParallelController:
         # We need to be careful with nested dataclasses
         config_dict = self._serialize_config(self.config)
 
+        # Pass current environment to worker processes
+        import os
+        current_env = dict(os.environ)
+        
         # Create process pool with initializer
         self.executor = ProcessPoolExecutor(
             max_workers=self.num_workers,
             initializer=_worker_init,
-            initargs=(config_dict, self.evaluation_file),
+            initargs=(config_dict, self.evaluation_file, current_env),
         )
 
         logger.info(f"Started process pool with {self.num_workers} processes")

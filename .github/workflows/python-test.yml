@@ -37,6 +37,7 @@ jobs:
   integration-tests:
     needs: unit-tests  # Only run if unit tests pass
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # Limit integration tests to 30 minutes
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

@@ -39,6 +39,7 @@ class OpenAILLM(LLMInterface):
             api_key=self.api_key,
             base_url=self.api_base,
             timeout=self.timeout,
+            max_retries=self.retries,
         )
 
         # Only log unique models to reduce duplication
