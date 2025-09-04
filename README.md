@@ -94,6 +94,40 @@ print(f'Best score: {result.best_score:.4f}')
 "
 ```
 
+### 📚 **Library Usage**
+
+OpenEvolve can be used as a library without any external files:
+
+```python
+from openevolve import run_evolution, evolve_function
+
+# Evolution with inline code (no files needed!)
+result = run_evolution(
+    initial_program='''
+    def fibonacci(n):
+        if n <= 1: return n
+        return fibonacci(n-1) + fibonacci(n-2)
+    ''',
+    evaluator=lambda path: {"score": benchmark_fib(path)},
+    iterations=100
+)
+
+# Evolve Python functions directly
+def bubble_sort(arr):
+    for i in range(len(arr)):
+        for j in range(len(arr)-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j] 
+    return arr
+
+result = evolve_function(
+    bubble_sort,
+    test_cases=[([3,1,2], [1,2,3]), ([5,2,8], [2,5,8])],
+    iterations=50
+)
+print(f"Evolved sorting algorithm: {result.best_code}")
+```
+
 **Want more control?** Use the full CLI:
 
 ```bash
@@ -213,7 +247,7 @@ OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes
 ## 🛠 Installation & Setup
 
 ### Requirements
-- **Python**: 3.9+ 
+- **Python**: 3.10+ 
 - **LLM Access**: Any OpenAI-compatible API
 - **Optional**: Docker for containerized runs
 

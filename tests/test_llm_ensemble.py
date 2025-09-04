@@ -10,8 +10,8 @@ from openevolve.config import LLMModelConfig
 class TestLLMEnsemble(unittest.TestCase):
     def test_weighted_sampling(self):
         models = [
-            LLMModelConfig(name="a", weight=0.0),
-            LLMModelConfig(name="b", weight=1.0),
+            LLMModelConfig(name="a", weight=0.0, api_key="test", api_base="http://test"),
+            LLMModelConfig(name="b", weight=1.0, api_key="test", api_base="http://test"),
         ]
         ensemble = LLMEnsemble(models)
         # Should always sample model 'b'
@@ -19,9 +19,9 @@ class TestLLMEnsemble(unittest.TestCase):
             self.assertEqual(ensemble._sample_model().model, "b")
 
         models = [
-            LLMModelConfig(name="a", weight=0.3),
-            LLMModelConfig(name="b", weight=0.3),
-            LLMModelConfig(name="c", weight=0.3),
+            LLMModelConfig(name="a", weight=0.3, api_key="test", api_base="http://test"),
+            LLMModelConfig(name="b", weight=0.3, api_key="test", api_base="http://test"),
+            LLMModelConfig(name="c", weight=0.3, api_key="test", api_base="http://test"),
         ]
         ensemble = LLMEnsemble(models)
         # Should sample both models. Track sampled models in a set
