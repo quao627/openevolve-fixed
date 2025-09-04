@@ -253,16 +253,22 @@ class TestIslandMigration(unittest.TestCase):
         self.assertGreater(total_programs_after, original_program_count)
         self.assertGreater(sum(island_sizes_after), sum(island_sizes_before))
 
-        # Verify that migrant programs have correct metadata
+        # Verify that migrant programs have correct metadata (new implementation)
         migrant_count = 0
         for program in self.database.programs.values():
             if program.metadata.get("migrant", False):
                 migrant_count += 1
-                # Migrant should have "_migrant_" in their ID
-                self.assertIn("_migrant_", program.id)
+                # With new implementation, migrants have clean UUIDs, not "_migrant_" suffixes
+                self.assertNotIn("_migrant_", program.id, 
+                                "New implementation should not create _migrant suffix programs")
 
         # Should have some migrant programs
         self.assertGreater(migrant_count, 0)
+        
+        # Verify no programs have _migrant_ suffixes anywhere
+        migrant_suffix_count = sum(1 for p in self.database.programs.values() if "_migrant_" in p.id)
+        self.assertEqual(migrant_suffix_count, 0, 
+                        "No programs should have _migrant_ suffixes with new implementation")
 
 
 class TestWorkerPinningEdgeCases(unittest.TestCase):
