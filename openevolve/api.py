@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from openevolve.controller import OpenEvolve
-from openevolve.config import Config, load_config
+from openevolve.config import Config, load_config, LLMModelConfig
 from openevolve.database import Program
 
 
@@ -26,6 +26,7 @@ class EvolutionResult:
     
     def __repr__(self):
         return f"EvolutionResult(best_score={self.best_score:.4f})"
+
 
 
 def run_evolution(
@@ -113,6 +114,17 @@ async def _run_evolution_async(
             config_obj = config
         else:
             config_obj = load_config(str(config))
+        
+        # Validate that LLM models are configured
+        if not config_obj.llm.models:
+            raise ValueError(
+                "No LLM models configured. Please provide a config with LLM models, or set up "
+                "your configuration with models. For example:\n\n"
+                "from openevolve.config import Config, LLMModelConfig\n"
+                "config = Config()\n"
+                "config.llm.models = [LLMModelConfig(name='gpt-4', api_key='your-key')]\n"
+                "result = run_evolution(program, evaluator, config=config)"
+            )
         
         # Set up output directory
         if output_dir is None and cleanup:

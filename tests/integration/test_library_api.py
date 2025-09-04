@@ -9,6 +9,35 @@ import shutil
 from pathlib import Path
 
 from openevolve import run_evolution, evolve_function, evolve_code, evolve_algorithm
+from openevolve.config import Config, LLMModelConfig
+
+
+def _get_library_test_config(port: int = 8000) -> Config:
+    """Get config for library API tests with optillm server"""
+    config = Config()
+    config.max_iterations = 100
+    config.checkpoint_interval = 25
+    config.database.in_memory = True
+    config.evaluator.cascade_evaluation = False
+    config.evaluator.parallel_evaluations = 1
+    config.evaluator.timeout = 60
+    
+    # Configure to use optillm server
+    base_url = f"http://localhost:{port}/v1"
+    config.llm.api_base = base_url
+    config.llm.timeout = 120
+    config.llm.retries = 0
+    config.llm.models = [
+        LLMModelConfig(
+            name="google/gemma-3-270m-it",
+            api_key="optillm",
+            api_base=base_url,
+            weight=1.0,
+            timeout=120,
+            retries=0
+        )
+    ]
+    return config
 
 
 class TestLibraryAPIIntegration:
@@ -45,7 +74,8 @@ class TestLibraryAPIIntegration:
             test_cases,
             iterations=2,  # Very small number for CI speed
             output_dir=str(temp_workspace / "evolve_function_output"),
-            cleanup=False  # Keep files for inspection
+            cleanup=False,  # Keep files for inspection
+            config=_get_library_test_config(optillm_server['port'])
         )
         
         # Verify the result structure
@@ -136,7 +166,8 @@ def fibonacci(n):
             fibonacci_evaluator,
             iterations=1,  # Minimal for CI speed
             output_dir=str(temp_workspace / "evolve_code_output"),
-            cleanup=False  # Keep output directory
+            cleanup=False,  # Keep output directory
+            config=_get_library_test_config(optillm_server['port'])
         )
         
         # Verify result structure
@@ -233,7 +264,8 @@ def evaluate(program_path):
             evaluator=str(evaluator_file),
             iterations=1,  # Minimal for CI speed
             output_dir=str(temp_workspace / "run_evolution_output"),
-            cleanup=False  # Keep output directory
+            cleanup=False,  # Keep output directory
+            config=_get_library_test_config(optillm_server['port'])
         )
         
         # Verify result
@@ -258,7 +290,9 @@ def evaluate(program_path):
             initial_program=initial_program.read_text(),
             evaluator=lambda path: {"score": 0.8, "test": "passed"},  # Simple callable evaluator
             iterations=1,
-            output_dir=str(temp_workspace / "run_evolution_string_output")
+            output_dir=str(temp_workspace / "run_evolution_string_output"),
+            cleanup=False,  # Keep output directory
+            config=_get_library_test_config(optillm_server['port'])
         )
         
         assert result2 is not None
