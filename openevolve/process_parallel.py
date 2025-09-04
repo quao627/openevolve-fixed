@@ -671,18 +671,12 @@ class ProcessParallelController:
             # Use specified island or current island
             target_island = island_id if island_id is not None else self.database.current_island
 
-            # Temporarily set database to target island for sampling
-            original_island = self.database.current_island
-            self.database.current_island = target_island
-
-            try:
-                # Sample parent and inspirations from the target island
-                parent, inspirations = self.database.sample(
-                    num_inspirations=self.config.prompt.num_top_programs
-                )
-            finally:
-                # Always restore original island state
-                self.database.current_island = original_island
+            # Use thread-safe sampling that doesn't modify shared state
+            # This fixes the race condition from GitHub issue #246
+            parent, inspirations = self.database.sample_from_island(
+                island_id=target_island,
+                num_inspirations=self.config.prompt.num_top_programs
+            )
 
             # Create database snapshot
             db_snapshot = self._create_database_snapshot()

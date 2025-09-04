@@ -363,6 +363,95 @@ class ProgramDatabase:
         logger.debug(f"Sampled parent {parent.id} and {len(inspirations)} inspirations")
         return parent, inspirations
 
+    def sample_from_island(
+        self, island_id: int, num_inspirations: Optional[int] = None
+    ) -> Tuple[Program, List[Program]]:
+        """
+        Sample a program and inspirations from a specific island without modifying current_island
+        
+        This method is thread-safe and doesn't modify shared state, avoiding race conditions
+        when multiple workers sample from different islands concurrently.
+        
+        Args:
+            island_id: The island to sample from
+            num_inspirations: Number of inspiration programs to sample (defaults to 5)
+            
+        Returns:
+            Tuple of (parent_program, inspiration_programs)
+        """
+        # Ensure valid island ID
+        island_id = island_id % len(self.islands)
+        
+        # Get programs from the specific island
+        island_programs = list(self.islands[island_id])
+        
+        if not island_programs:
+            # Island is empty, fall back to sampling from all programs
+            logger.debug(f"Island {island_id} is empty, sampling from all programs")
+            return self.sample(num_inspirations)
+        
+        # Select parent from island programs
+        if len(island_programs) == 1:
+            parent_id = island_programs[0]
+        else:
+            # Use weighted sampling based on program scores
+            island_program_objects = [
+                self.programs[pid] for pid in island_programs 
+                if pid in self.programs
+            ]
+            
+            if not island_program_objects:
+                # Fallback if programs not found
+                parent_id = random.choice(island_programs)
+            else:
+                # Calculate weights based on fitness scores
+                weights = []
+                for prog in island_program_objects:
+                    fitness = get_fitness_score(prog.metrics, self.config.feature_dimensions)
+                    # Add small epsilon to avoid zero weights
+                    weights.append(max(fitness, 0.001))
+                
+                # Normalize weights
+                total_weight = sum(weights)
+                if total_weight > 0:
+                    weights = [w / total_weight for w in weights]
+                else:
+                    weights = [1.0 / len(island_program_objects)] * len(island_program_objects)
+                
+                # Sample parent based on weights
+                parent = random.choices(island_program_objects, weights=weights, k=1)[0]
+                parent_id = parent.id
+        
+        parent = self.programs.get(parent_id)
+        if not parent:
+            # Should not happen, but handle gracefully
+            logger.error(f"Parent program {parent_id} not found in database")
+            return self.sample(num_inspirations)
+        
+        # Select inspirations from the same island
+        if num_inspirations is None:
+            num_inspirations = 5  # Default for backward compatibility
+            
+        # Get other programs from the island for inspirations
+        other_programs = [pid for pid in island_programs if pid != parent_id]
+        
+        if len(other_programs) < num_inspirations:
+            # Not enough programs in island, use what we have
+            inspiration_ids = other_programs
+        else:
+            # Sample inspirations
+            inspiration_ids = random.sample(other_programs, num_inspirations)
+        
+        inspirations = [
+            self.programs[pid] for pid in inspiration_ids 
+            if pid in self.programs
+        ]
+        
+        logger.debug(
+            f"Sampled parent {parent.id} and {len(inspirations)} inspirations from island {island_id}"
+        )
+        return parent, inspirations
+
     def get_best_program(self, metric: Optional[str] = None) -> Optional[Program]:
         """
         Get the best program based on a metric
