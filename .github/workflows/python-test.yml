@@ -63,7 +63,7 @@ jobs:
       - name: Start optillm server
         run: |
           echo "Starting optillm server for integration tests..."
-          OPTILLM_API_KEY=optillm optillm --model google/gemma-3-270m-it --port 8000 &
+          OPTILLM_API_KEY=optillm HF_TOKEN=${{ secrets.HF_TOKEN }} optillm --model google/gemma-3-270m-it --port 8000 &
           echo $! > server.pid
           
           # Wait for server to be ready
@@ -74,11 +74,13 @@ jobs:
           curl -s http://localhost:8000/health || echo "Server health check failed"
         env:
           OPTILLM_API_KEY: optillm
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
       - name: Run integration tests
         env:
           OPENAI_API_KEY: optillm
           OPTILLM_API_KEY: optillm
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           pytest tests/integration -v --tb=short
           

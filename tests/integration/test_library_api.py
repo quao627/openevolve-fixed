@@ -121,7 +121,8 @@ def fibonacci(n):
                     return {
                         "score": accuracy,
                         "correctness": accuracy,
-                        "test_cases_passed": correct
+                        "test_cases_passed": correct,
+                        "combined_score": accuracy  # Use accuracy as combined score
                     }
                 else:
                     return {"score": 0.0, "error": "fibonacci function not found"}
@@ -217,6 +218,7 @@ def evaluate(program_path):
                 "score": accuracy,
                 "correctness": accuracy,
                 "complexity": 10,  # Fixed complexity for simplicity
+                "combined_score": accuracy  # Use accuracy as combined score
             }
         else:
             return {"score": 0.0, "error": "sort_numbers function not found"}

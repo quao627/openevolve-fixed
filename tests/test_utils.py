@@ -118,6 +118,9 @@ def get_integration_config(port: int = DEFAULT_PORT) -> Config:
     config.database.in_memory = True
     config.evaluator.parallel_evaluations = 2
     
+    # Disable cascade evaluation to avoid warnings in simple test evaluators
+    config.evaluator.cascade_evaluation = False
+    
     # Configure to use optillm server
     base_url = f"http://localhost:{port}/v1"
     config.llm.api_base = base_url
@@ -150,5 +153,5 @@ def solve(x):
 def get_evolution_test_evaluator():
     """Get a simple evaluator for evolution testing"""
     return """def evaluate(program_path):
-    return {"score": 0.5, "complexity": 10}
+    return {"score": 0.5, "complexity": 10, "combined_score": 0.5}
 """
