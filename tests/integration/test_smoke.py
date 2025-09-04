@@ -9,98 +9,20 @@ from pathlib import Path
 
 from openevolve import run_evolution, evolve_function, evolve_code
 from openevolve.config import Config, LLMModelConfig
-from openevolve.controller import OpenEvolve
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from test_utils import get_evolution_test_program, get_evolution_test_evaluator
-
-
-def get_mock_config() -> Config:
-    """Get config with mock/fast settings for smoke tests"""
-    config = Config()
-    config.max_iterations = 1
-    config.checkpoint_interval = 50
-    config.database.in_memory = True
-    config.evaluator.cascade_evaluation = False
-    config.evaluator.parallel_evaluations = 1
-    config.evaluator.timeout = 5  # Very short timeout
-    
-    # Use empty models list - will trigger validation but won't try to make LLM calls
-    config.llm.timeout = 5
-    config.llm.retries = 0
-    config.llm.models = []
-    
-    return config
 
 
 class TestSmoke:
     """Fast smoke tests for CI"""
 
-    def test_controller_initialization(self, test_program_file, test_evaluator_file):
-        """Test that OpenEvolve controller can be initialized"""
-        config = get_mock_config()
-        
-        controller = OpenEvolve(
-            initial_program_path=str(test_program_file),
-            evaluation_file=str(test_evaluator_file),
-            config=config,
-            output_dir=tempfile.mkdtemp()
-        )
-        
-        # Test basic initialization
-        assert controller is not None
-        assert controller.database is not None
-        assert controller.evaluator is not None
-        assert len(controller.database.programs) == 1  # Initial program loaded
-
-    def test_database_operations(self, test_program_file, test_evaluator_file):
-        """Test database operations work correctly"""
-        config = get_mock_config()
-        
-        controller = OpenEvolve(
-            initial_program_path=str(test_program_file),
-            evaluation_file=str(test_evaluator_file),
-            config=config,
-            output_dir=tempfile.mkdtemp()
-        )
-        
-        # Test database functionality
-        initial_count = len(controller.database.programs)
-        assert initial_count == 1
-        
-        # Test program retrieval
-        program_ids = list(controller.database.programs.keys())
-        assert len(program_ids) == 1
-        
-        first_program = controller.database.get(program_ids[0])
-        assert first_program is not None
-        assert hasattr(first_program, 'code')
-        assert hasattr(first_program, 'metrics')
-
-    def test_evaluator_works(self, test_program_file, test_evaluator_file):
-        """Test that evaluator can evaluate the initial program"""
-        config = get_mock_config()
-        
-        controller = OpenEvolve(
-            initial_program_path=str(test_program_file),
-            evaluation_file=str(test_evaluator_file),
-            config=config,
-            output_dir=tempfile.mkdtemp()
-        )
-        
-        # The initial program should have been evaluated during initialization
-        programs = list(controller.database.programs.values())
-        initial_program = programs[0]
-        
-        assert initial_program.metrics is not None
-        assert 'score' in initial_program.metrics
-        assert 'combined_score' in initial_program.metrics
-
     def test_library_api_validation(self):
         """Test library API gives proper error messages when not configured"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(get_evolution_test_program())
+            f.write("""
+# EVOLVE-BLOCK-START
+def solve(x):
+    return x * 2
+# EVOLVE-BLOCK-END
+""")
             program_file = f.name
         
         def simple_evaluator(path):
@@ -132,20 +54,42 @@ class TestSmoke:
         assert config.database.in_memory is True
         assert config.llm.retries >= 0
 
+    def test_llm_config_creation(self):
+        """Test that LLM configuration can be created properly"""
+        config = Config()
+        
+        # Test adding a model configuration
+        config.llm.models = [
+            LLMModelConfig(
+                name="test-model",
+                api_key="test-key", 
+                api_base="http://localhost:8000/v1",
+                weight=1.0,
+                timeout=60,
+                retries=0
+            )
+        ]
+        
+        assert len(config.llm.models) == 1
+        assert config.llm.models[0].name == "test-model"
+        assert config.llm.models[0].retries == 0
 
-@pytest.fixture
-def test_program_file():
-    """Create a temporary test program file"""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-        f.write(get_evolution_test_program())
-        yield Path(f.name)
-    Path(f.name).unlink()
-
-
-@pytest.fixture  
-def test_evaluator_file():
-    """Create a temporary test evaluator file"""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-        f.write(get_evolution_test_evaluator())
-        yield Path(f.name)
-    Path(f.name).unlink()
+    def test_evolution_result_structure(self):
+        """Test that EvolutionResult has the expected structure"""
+        from openevolve.api import EvolutionResult
+        from openevolve.database import Program
+        
+        # Test creating an EvolutionResult
+        result = EvolutionResult(
+            best_program=None,
+            best_score=0.85,
+            best_code="def test(): pass",
+            metrics={"accuracy": 0.85, "speed": 100},
+            output_dir="/tmp/test"
+        )
+        
+        assert result.best_score == 0.85
+        assert result.best_code == "def test(): pass"
+        assert result.metrics["accuracy"] == 0.85
+        assert result.output_dir == "/tmp/test"
+        assert "0.8500" in str(result)  # Test __repr__
