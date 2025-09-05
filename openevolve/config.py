@@ -5,7 +5,7 @@ Configuration handling for OpenEvolve
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 
@@ -18,6 +18,9 @@ class LLMModelConfig:
     api_base: str = None
     api_key: Optional[str] = None
     name: str = None
+
+    # Custom LLM client
+    init_client: Optional[Callable] = None
 
     # Weight for model in ensemble
     weight: float = 1.0
