@@ -38,6 +38,9 @@ class LLMModelConfig:
 
     # Reproducibility
     random_seed: Optional[int] = None
+    
+    # Reasoning parameters
+    reasoning_effort: Optional[str] = None
 
 
 @dataclass
@@ -69,6 +72,9 @@ class LLMConfig(LLMModelConfig):
     primary_model_weight: float = None
     secondary_model: str = None
     secondary_model_weight: float = None
+    
+    # Reasoning parameters (inherited from LLMModelConfig but can be overridden)
+    reasoning_effort: Optional[str] = None
 
     def __post_init__(self):
         """Post-initialization to set up model configurations"""
@@ -121,6 +127,7 @@ class LLMConfig(LLMModelConfig):
             "retries": self.retries,
             "retry_delay": self.retry_delay,
             "random_seed": self.random_seed,
+            "reasoning_effort": self.reasoning_effort,
         }
         self.update_model_params(shared_config)
 
@@ -173,6 +180,7 @@ class LLMConfig(LLMModelConfig):
             "retries": self.retries,
             "retry_delay": self.retry_delay,
             "random_seed": self.random_seed,
+            "reasoning_effort": self.reasoning_effort,
         }
         self.update_model_params(shared_config)
 
