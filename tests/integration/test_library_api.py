@@ -16,7 +16,7 @@ def _get_library_test_config(port: int = 8000) -> Config:
     """Get config for library API tests with optillm server"""
     config = Config()
     config.max_iterations = 100
-    config.checkpoint_interval = 25
+    config.checkpoint_interval = 1
     config.database.in_memory = True
     config.evaluator.cascade_evaluation = False
     config.evaluator.parallel_evaluations = 1
