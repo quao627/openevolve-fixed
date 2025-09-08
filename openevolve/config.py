@@ -314,6 +314,19 @@ class EvaluatorConfig:
 
 
 @dataclass
+class EvolutionTraceConfig:
+    """Configuration for evolution trace logging"""
+    
+    enabled: bool = False
+    format: str = "jsonl"  # Options: "jsonl", "json", "hdf5"
+    include_code: bool = False
+    include_prompts: bool = True
+    output_path: Optional[str] = None
+    buffer_size: int = 10
+    compress: bool = False
+
+
+@dataclass
 class Config:
     """Master configuration for OpenEvolve"""
 
@@ -330,6 +343,7 @@ class Config:
     prompt: PromptConfig = field(default_factory=PromptConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     evaluator: EvaluatorConfig = field(default_factory=EvaluatorConfig)
+    evolution_trace: EvolutionTraceConfig = field(default_factory=EvolutionTraceConfig)
 
     # Evolution settings
     diff_based_evolution: bool = True
@@ -355,7 +369,7 @@ class Config:
 
         # Update top-level fields
         for key, value in config_dict.items():
-            if key not in ["llm", "prompt", "database", "evaluator"] and hasattr(config, key):
+            if key not in ["llm", "prompt", "database", "evaluator", "evolution_trace"] and hasattr(config, key):
                 setattr(config, key, value)
 
         # Update nested configs
@@ -378,6 +392,8 @@ class Config:
             config.database.random_seed = config.random_seed
         if "evaluator" in config_dict:
             config.evaluator = EvaluatorConfig(**config_dict["evaluator"])
+        if "evolution_trace" in config_dict:
+            config.evolution_trace = EvolutionTraceConfig(**config_dict["evolution_trace"])
 
         return config
 
@@ -445,6 +461,15 @@ class Config:
                 # "distributed": self.evaluator.distributed,
                 "use_llm_feedback": self.evaluator.use_llm_feedback,
                 "llm_feedback_weight": self.evaluator.llm_feedback_weight,
+            },
+            "evolution_trace": {
+                "enabled": self.evolution_trace.enabled,
+                "format": self.evolution_trace.format,
+                "include_code": self.evolution_trace.include_code,
+                "include_prompts": self.evolution_trace.include_prompts,
+                "output_path": self.evolution_trace.output_path,
+                "buffer_size": self.evolution_trace.buffer_size,
+                "compress": self.evolution_trace.compress,
             },
             # Evolution settings
             "diff_based_evolution": self.diff_based_evolution,

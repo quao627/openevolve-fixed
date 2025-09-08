@@ -274,10 +274,11 @@ def _run_iteration_worker(
 class ProcessParallelController:
     """Controller for process-based parallel evolution"""
 
-    def __init__(self, config: Config, evaluation_file: str, database: ProgramDatabase):
+    def __init__(self, config: Config, evaluation_file: str, database: ProgramDatabase, evolution_tracer=None):
         self.config = config
         self.evaluation_file = evaluation_file
         self.database = database
+        self.evolution_tracer = evolution_tracer
 
         self.executor: Optional[ProcessPoolExecutor] = None
         self.shutdown_event = mp.Event()
@@ -481,6 +482,28 @@ class ProcessParallelController:
                     # Store artifacts
                     if result.artifacts:
                         self.database.store_artifacts(child_program.id, result.artifacts)
+                    
+                    # Log evolution trace
+                    if self.evolution_tracer:
+                        # Retrieve parent program for trace logging
+                        parent_program = self.database.get(result.parent_id) if result.parent_id else None
+                        if parent_program:
+                            # Determine island ID
+                            island_id = child_program.metadata.get("island", self.database.current_island)
+                            
+                            self.evolution_tracer.log_trace(
+                                iteration=completed_iteration,
+                                parent_program=parent_program,
+                                child_program=child_program,
+                                prompt=result.prompt,
+                                llm_response=result.llm_response,
+                                artifacts=result.artifacts,
+                                island_id=island_id,
+                                metadata={
+                                    "iteration_time": result.iteration_time,
+                                    "changes": child_program.metadata.get("changes", ""),
+                                }
+                            )
 
                     # Log prompts
                     if result.prompt:
