@@ -127,15 +127,6 @@ result = evolve_function(
 print(f"Evolved sorting algorithm: {result.best_code}")
 ```
 
-**Want more control?** Use the full CLI:
-
-```bash
-python openevolve-run.py examples/function_minimization/initial_program.py \
-  examples/function_minimization/evaluator.py \
-  --config examples/function_minimization/config.yaml \
-  --iterations 1000
-```
-
 **Prefer Docker?**
 ```bash
 docker run --rm -v $(pwd):/app ghcr.io/codelion/openevolve:latest \
