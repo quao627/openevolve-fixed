@@ -80,19 +80,18 @@ Get from zero to evolving code in **30 seconds**:
 # Install OpenEvolve
 pip install openevolve
 
-# Set your LLM API key (works with any OpenAI-compatible provider)
-export OPENAI_API_KEY="your-api-key"
+# The example uses Google Gemini by default (free tier available)
+# Get your API key from: https://aistudio.google.com/apikey
+export OPENAI_API_KEY="your-gemini-api-key"  # Yes, use OPENAI_API_KEY env var
 
 # Run your first evolution!
-python -c "
-from openevolve import run_evolution
-result = run_evolution(
-    'examples/function_minimization/initial_program.py',
-    'examples/function_minimization/evaluator.py'
-)
-print(f'Best score: {result.best_score:.4f}')
-"
+python openevolve-run.py examples/function_minimization/initial_program.py \
+  examples/function_minimization/evaluator.py \
+  --config examples/function_minimization/config.yaml \
+  --iterations 50
 ```
+
+**Note:** The example config uses Gemini by default, but you can use any OpenAI-compatible provider by modifying the `config.yaml`. See the [configs](configs/) for full configuration options.
 
 ### 📚 **Library Usage**
 
