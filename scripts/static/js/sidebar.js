@@ -366,7 +366,7 @@ export function showSidebarContent(d, fromHover = false) {
 
         function renderSidebarTabContent(tabName, d, children) {
             if (tabName === 'Code') {
-                return `<pre class="sidebar-code-pre">${d.code}</pre>`;
+                return `<pre class="sidebar-code-pre">${escapeHtml(d.code)}</pre>`;
             }
             if (tabName === 'Prompts') {
                 // Prompt select logic
