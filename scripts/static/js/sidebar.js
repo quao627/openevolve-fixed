@@ -308,84 +308,143 @@ export function showSidebarContent(d, fromHover = false) {
     const clones = allNodeData.filter(n => getBaseId(n.id) === baseId && n.id !== d.id);
     if (clones.length > 0) tabNames.push('Clones');
 
-    let activeTab = lastSidebarTab && tabNames.includes(lastSidebarTab) ? lastSidebarTab : tabNames[0];
-
-    // Helper to render tab content
-    function renderSidebarTabContent(tabName, d, children) {
-        if (tabName === 'Code') {
-            return `<pre class="sidebar-code-pre">${escapeHtml(d.code)}</pre>`;
-        }
-        if (tabName === 'Prompts') {
-            // Prompt select logic
-            let promptOptions = [];
-            let promptMap = {};
-            if (d.prompts && typeof d.prompts === 'object') {
-                for (const [k, v] of Object.entries(d.prompts)) {
-                    if (v && typeof v === 'object' && !Array.isArray(v)) {
-                        for (const [subKey, subVal] of Object.entries(v)) {
-                            const optLabel = `${k} - ${subKey}`;
-                            promptOptions.push(optLabel);
-                            promptMap[optLabel] = subVal;
-                        }
-                    } else {
-                        const optLabel = `${k}`;
-                        promptOptions.push(optLabel);
-                        promptMap[optLabel] = v;
-                    }
+    // Add a Diff tab when a parent exists with code to compare against
+    const parentNodeForDiff = d.parent_id && d.parent_id !== 'None' ? allNodeData.find(n => n.id == d.parent_id) : null;
+    if (parentNodeForDiff && parentNodeForDiff.code && parentNodeForDiff.code.trim() !== '') {
+        tabNames.push('Diff');
+    }
+ 
+        let activeTab = lastSidebarTab && tabNames.includes(lastSidebarTab) ? lastSidebarTab : tabNames[0];
+ 
+        // Helper to render tab content
+        // Simple line-level LCS diff renderer between two code strings
+        function renderCodeDiff(aCode, bCode) {
+            const a = (aCode || '').split('\n');
+            const b = (bCode || '').split('\n');
+            const m = a.length, n = b.length;
+            // build LCS table
+            const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+            for (let ii = m-1; ii >= 0; --ii) {
+                for (let jj = n-1; jj >= 0; --jj) {
+                    if (a[ii] === b[jj]) dp[ii][jj] = dp[ii+1][jj+1] + 1;
+                    else dp[ii][jj] = Math.max(dp[ii+1][jj], dp[ii][jj+1]);
                 }
             }
-            // Artifacts
-            if (d.artifacts_json) {
-                const optLabel = `artifacts`;
-                promptOptions.push(optLabel);
-                promptMap[optLabel] = d.artifacts_json;
+            // backtrack
+            let i = 0, j = 0;
+            const parts = [];
+            while (i < m && j < n) {
+                if (a[i] === b[j]) {
+                    parts.push({type: 'eq', line: a[i]});
+                    i++; j++; 
+                } else if (dp[i+1][j] >= dp[i][j+1]) {
+                    parts.push({type: 'del', line: a[i]});
+                    i++;
+                } else {
+                    parts.push({type: 'ins', line: b[j]});
+                    j++;
+                }
             }
-            // Get last selected prompt from localStorage, or default to first
-            let lastPromptKey = localStorage.getItem('sidebarPromptSelect') || promptOptions[0] || '';
-            if (!promptMap[lastPromptKey]) lastPromptKey = promptOptions[0] || '';
-            // Build select box
-            let selectHtml = '';
-            if (promptOptions.length > 1) {
-                selectHtml = `<select id="sidebar-prompt-select" style="margin-bottom:0.7em;max-width:100%;font-size:1em;">
-                    ${promptOptions.map(opt => `<option value="${opt}"${opt===lastPromptKey?' selected':''}>${opt}</option>`).join('')}
-                </select>`;
-            }
-            // Show only the selected prompt
-            let promptVal = promptMap[lastPromptKey];
-            let promptHtml = `<pre class="sidebar-pre">${promptVal ?? ''}</pre>`;
-            return selectHtml + promptHtml;
-        }
-        if (tabName === 'Children') {
-            const metric = (document.getElementById('metric-select') && document.getElementById('metric-select').value) || 'combined_score';
-            let min = 0, max = 1;
-            const vals = children.map(child => (child.metrics && typeof child.metrics[metric] === 'number') ? child.metrics[metric] : null).filter(x => x !== null);
-            if (vals.length > 0) {
-                min = Math.min(...vals);
-                max = Math.max(...vals);
-            }
-            return `<div><ul style='margin:0.5em 0 0 1em;padding:0;'>` +
-                children.map(child => {
-                    let val = (child.metrics && typeof child.metrics[metric] === 'number') ? child.metrics[metric].toFixed(4) : '(no value)';
-                    let bar = (child.metrics && typeof child.metrics[metric] === 'number') ? renderMetricBar(child.metrics[metric], min, max) : '';
-                    return `<li style='margin-bottom:0.3em;'><a href="#" class="child-link" data-child="${child.id}">${child.id}</a><br /><br /> <span style='margin-left:0.5em;'>${val}</span> ${bar}</li>`;
-                }).join('') +
-                `</ul></div>`;
-        }
-        if (tabName === 'Clones') {
-            return `<div><ul style='margin:0.5em 0 0 1em;padding:0;'>` +
-                clones.map(clone =>
-                    `<li style='margin-bottom:0.3em;'><a href="#" class="clone-link" data-clone="${clone.id}">${clone.id}</a></li>`
-                ).join('') +
-                `</ul></div>`;
-        }
-        return '';
-    }
+            while (i < m) { parts.push({type: 'del', line: a[i++]}); }
+            while (j < n) { parts.push({type: 'ins', line: b[j++]}); }
 
-    if (tabNames.length > 0) {
-        tabHtml = '<div id="sidebar-tab-bar" style="display:flex;gap:0.7em;margin-bottom:0.7em;">' +
-            tabNames.map((name) => `<span class="sidebar-tab${name===activeTab?' active':''}" data-tab="${name}">${name}</span>`).join('') + '</div>';
-        tabContentHtml = `<div id="sidebar-tab-content">${renderSidebarTabContent(activeTab, d, children)}</div>`;
-    }
+            // Render HTML with inline styles
+            const htmlLines = parts.map(function(p) {
+                if (p.type === 'eq') return '<div style="white-space:pre-wrap;">' + escapeHtml(p.line) + '</div>';
+                if (p.type === 'del') return '<div style="background:#fff0f0;color:#8b1a1a;padding:0.08em 0.3em;border-left:3px solid #f26;white-space:pre-wrap;">- ' + escapeHtml(p.line) + '</div>';
+                return '<div style="background:#f2fff2;color:#116611;padding:0.08em 0.3em;border-left:3px solid #2a8;white-space:pre-wrap;">+ ' + escapeHtml(p.line) + '</div>';
+            });
+            return '<div style="font-family: \'Fira Mono\', monospace; font-size:0.95em; line-height:1.35;">' +
+                '<div style="margin-bottom:0.4em;color:#666;">Showing diff between program and its parent (parent id: ' + (parentNodeForDiff ? parentNodeForDiff.id : 'N/A') + ')</div>' +
+                htmlLines.join('') + '</div>';
+        }
+
+        // small helper to escape HTML
+        function escapeHtml(s) {
+            return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function renderSidebarTabContent(tabName, d, children) {
+            if (tabName === 'Code') {
+                return `<pre class="sidebar-code-pre">${d.code}</pre>`;
+            }
+            if (tabName === 'Prompts') {
+                // Prompt select logic
+                let promptOptions = [];
+                let promptMap = {};
+                if (d.prompts && typeof d.prompts === 'object') {
+                    for (const [k, v] of Object.entries(d.prompts)) {
+                        if (v && typeof v === 'object' && !Array.isArray(v)) {
+                            for (const [subKey, subVal] of Object.entries(v)) {
+                                 const optLabel = `${k} - ${subKey}`;
+                                 promptOptions.push(optLabel);
+                                 promptMap[optLabel] = subVal;
+                             }
+                         } else {
+                             const optLabel = `${k}`;
+                             promptOptions.push(optLabel);
+                             promptMap[optLabel] = v;
+                         }
+                     }
+                 }
+                 // Artifacts
+                 if (d.artifacts_json) {
+                     const optLabel = `artifacts`;
+                     promptOptions.push(optLabel);
+                     promptMap[optLabel] = d.artifacts_json;
+                 }
+                 // Get last selected prompt from localStorage, or default to first
+                 let lastPromptKey = localStorage.getItem('sidebarPromptSelect') || promptOptions[0] || '';
+                 if (!promptMap[lastPromptKey]) lastPromptKey = promptOptions[0] || '';
+                 // Build select box
+                 let selectHtml = '';
+                 if (promptOptions.length > 1) {
+                     selectHtml = `<select id="sidebar-prompt-select" style="margin-bottom:0.7em;max-width:100%;font-size:1em;">
+                         ${promptOptions.map(opt => `<option value="${opt}"${opt===lastPromptKey?' selected':''}>${opt}</option>`).join('')}
+                     </select>`;
+                 }
+                 // Show only the selected prompt
+                 let promptVal = promptMap[lastPromptKey];
+                 let promptHtml = `<pre class="sidebar-pre">${promptVal ?? ''}</pre>`;
+                 return selectHtml + promptHtml;
+             }
+             if (tabName === 'Children') {
+                 const metric = (document.getElementById('metric-select') && document.getElementById('metric-select').value) || 'combined_score';
+                 let min = 0, max = 1;
+                 const vals = children.map(child => (child.metrics && typeof child.metrics[metric] === 'number') ? child.metrics[metric] : null).filter(x => x !== null);
+                 if (vals.length > 0) {
+                     min = Math.min(...vals);
+                     max = Math.max(...vals);
+                 }
+                 return `<div><ul style='margin:0.5em 0 0 1em;padding:0;'>` +
+                     children.map(child => {
+                         let val = (child.metrics && typeof child.metrics[metric] === 'number') ? child.metrics[metric].toFixed(4) : '(no value)';
+                         let bar = (child.metrics && typeof child.metrics[metric] === 'number') ? renderMetricBar(child.metrics[metric], min, max) : '';
+                         return `<li style='margin-bottom:0.3em;'><a href="#" class="child-link" data-child="${child.id}">${child.id}</a><br /><br /> <span style='margin-left:0.5em;'>${val}</span> ${bar}</li>`;
+                     }).join('') +
+                     `</ul></div>`;
+             }
+             if (tabName === 'Clones') {
+                 return `<div><ul style='margin:0.5em 0 0 1em;padding:0;'>` +
+                     clones.map(clone =>
+                         `<li style='margin-bottom:0.3em;'><a href="#" class="clone-link" data-clone="${clone.id}">${clone.id}</a></li>`
+                     ).join('') +
+                     `</ul></div>`;
+             }
+             if (tabName === 'Diff') {
+                 const parentNode = parentNodeForDiff;
+                 const parentCode = parentNode ? parentNode.code || '' : '';
+                 const curCode = d.code || '';
+                 return renderCodeDiff(parentCode, curCode);
+             }
+             return '';
+         }
+ 
+     if (tabNames.length > 0) {
+         tabHtml = '<div id="sidebar-tab-bar" style="display:flex;gap:0.7em;margin-bottom:0.7em;">' +
+             tabNames.map((name) => `<span class="sidebar-tab${name===activeTab?' active':''}" data-tab="${name}">${name}</span>`).join('') + '</div>';
+         tabContentHtml = `<div id="sidebar-tab-content">${renderSidebarTabContent(activeTab, d, children)}</div>`;
+     }
     let parentIslandHtml = '';
     if (d.parent_id && d.parent_id !== 'None') {
         const parent = allNodeData.find(n => n.id == d.parent_id);
