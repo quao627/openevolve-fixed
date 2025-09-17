@@ -93,7 +93,7 @@ python openevolve-run.py examples/function_minimization/initial_program.py \
 
 **Note:** The example config uses Gemini by default, but you can use any OpenAI-compatible provider by modifying the `config.yaml`. See the [configs](configs/) for full configuration options.
 
-### 📚 **Library Usage**
+### **Library Usage**
 
 OpenEvolve can be used as a library without any external files:
 
@@ -410,7 +410,7 @@ def minimize_function(func, bounds, max_evals=1000):
 
 **Performance**: 100x improvement in convergence speed!
 
-### 🔬 **Advanced Examples**
+### **Advanced Examples**
 
 <details>
 <summary><b>Prompt Evolution</b></summary>
@@ -439,7 +439,7 @@ def minimize_function(func, bounds, max_evals=1000):
 
 </details>
 
-## ⚙️ Configuration
+## Configuration
 
 OpenEvolve offers extensive configuration for advanced users:
 
@@ -529,7 +529,7 @@ See [prompt examples](examples/llm_prompt_optimization/templates/) for complete 
 
 </details>
 
-## 📝 Crafting Effective System Messages
+## Crafting Effective System Messages
 
 **System messages are the secret to successful evolution.** They guide the LLM's understanding of your domain, constraints, and optimization goals. A well-crafted system message can be the difference between random mutations and targeted improvements.
 
@@ -578,7 +578,7 @@ Based on successful OpenEvolve implementations, system messages are best created
 
 ### Examples by Complexity
 
-#### 🎯 **Simple: General Optimization**
+#### **Simple: General Optimization**
 ```yaml
 prompt:
   system_message: |
@@ -587,7 +587,7 @@ prompt:
     global minimum reliably, escaping local minima that might trap simple algorithms.
 ```
 
-#### 🔧 **Intermediate: Domain-Specific Guidance**
+#### **Intermediate: Domain-Specific Guidance**
 ```yaml
 prompt:
   system_message: |
@@ -690,7 +690,7 @@ See the [LLM Prompt Optimization example](examples/llm_prompt_optimization/) for
 - **No Examples**: Concrete examples guide LLM better than abstract descriptions
 - **Ignoring Artifacts**: Don't refine prompts based on error feedback
 
-## 🔧 Artifacts & Debugging
+## Artifacts & Debugging
 
 **Artifacts side-channel** provides rich feedback to accelerate evolution:
 
@@ -720,7 +720,7 @@ return EvaluationResult(
 
 This creates a **feedback loop** where each generation learns from previous mistakes!
 
-## 📊 Visualization
+## Visualization
 
 **Real-time evolution tracking** with interactive web interface:
 
@@ -745,7 +745,7 @@ python scripts/visualizer.py --path examples/function_minimization/openevolve_ou
 
 ![OpenEvolve Visualizer](openevolve-visualizer.png)
 
-## 🚀 Roadmap
+## Roadmap
 
 ### **🔥 Upcoming Features**
 
@@ -763,7 +763,7 @@ python scripts/visualizer.py --path examples/function_minimization/openevolve_ou
 
 Want to contribute? Check out our [roadmap discussions](https://github.com/codelion/openevolve/discussions/categories/roadmap)!
 
-## 🤔 FAQ
+## FAQ
 
 <details>
 <summary><b>💰 How much does it cost to run?</b></summary>
@@ -834,7 +834,7 @@ Just set the `api_base` in your config to point to your endpoint.
 
 </details>
 
-### 🌟 **Contributors**
+### **Contributors**
 
 Thanks to all our amazing contributors who make OpenEvolve possible!
 
@@ -842,7 +842,7 @@ Thanks to all our amazing contributors who make OpenEvolve possible!
   <img src="https://contrib.rocks/image?repo=codelion/openevolve" />
 </a>
 
-### 🤝 **Contributing**
+### **Contributing**
 
 We welcome contributions! Here's how to get started:
 
@@ -855,14 +855,14 @@ We welcome contributions! Here's how to get started:
 
 **New to open source?** Check out our [Contributing Guide](CONTRIBUTING.md) and look for [`good-first-issue`](https://github.com/codelion/openevolve/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) labels!
 
-### 📚 **Academic & Research**
+### **Academic & Research**
 
 **Articles & Blog Posts About OpenEvolve**:
 - [Towards Open Evolutionary Agents](https://huggingface.co/blog/driaforall/towards-open-evolutionary-agents) - Evolution of coding agents and the open-source movement
 - [OpenEvolve: GPU Kernel Discovery](https://huggingface.co/blog/codelion/openevolve-gpu-kernel-discovery) - Automated discovery of optimized GPU kernels
 - [OpenEvolve: Evolutionary Coding with LLMs](https://huggingface.co/blog/codelion/openevolve) - Introduction to evolutionary algorithm discovery using large language models
 
-## 📊 Citation
+## Citation
 
 If you use OpenEvolve in your research, please cite:
 
