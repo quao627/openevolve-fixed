@@ -510,7 +510,13 @@ prompt:
       - "Let's enhance this code:"
       - "Time to optimize:"
       - "Improving the algorithm:"
+    improvement_suggestion:
+      - "Here's how we could improve this code:"
+      - "I suggest the following improvements:"
+      - "We can enhance this code by:"
 ```
+
+**How it works:** Place `{greeting}` or `{improvement_suggestion}` placeholders in your templates, and OpenEvolve will randomly choose from the variations for each generation, adding diversity to prompts.
 
 See [prompt examples](examples/llm_prompt_optimization/templates/) for complete template customization.
 
@@ -700,15 +706,18 @@ system_message: "Given the successful simulated annealing approach,
 focus on parameter tuning and cooling schedules..."
 ```
 
-**Template Variation:**
+**Template Stochasticity:**
 
 ```yaml
 prompt:
   template_dir: "custom_templates/"
   use_template_stochasticity: true
-  system_message: |
-    # Use multiple greeting variations
-    [Randomly: "Let's optimize this code:" | "Time to enhance:" | "Improving:"]
+  template_variations:
+    greeting:
+      - "Let's optimize this code:"
+      - "Time to enhance:"
+      - "Improving:"
+  # Then use {greeting} in your templates to get random variations
 ```
 
 </details>
