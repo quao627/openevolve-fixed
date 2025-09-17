@@ -64,7 +64,7 @@ Full reproducibility, extensive evaluation pipelines, and scientific rigor built
 
 | 🎯 **Domain** | 📈 **Achievement** | 🔗 **Example** |
 |---------------|-------------------|----------------|
-| **GPU Optimization** | 2-3x speedup on Apple Silicon | [MLX Metal Kernels](examples/mlx_metal_kernel_opt/) |
+| **GPU Optimization** | Hardware-optimized kernel discovery | [MLX Metal Kernels](examples/mlx_metal_kernel_opt/) |
 | **Mathematical** | State-of-the-art circle packing (n=26) | [Circle Packing](examples/circle_packing/) |
 | **Algorithm Design** | Adaptive sorting algorithms | [Rust Adaptive Sort](examples/rust_adaptive_sort/) |
 | **Scientific Computing** | Automated filter design | [Signal Processing](examples/signal_processing/) |
@@ -127,12 +127,7 @@ result = evolve_function(
 print(f"Evolved sorting algorithm: {result.best_code}")
 ```
 
-**Prefer Docker?**
-```bash
-docker run --rm -v $(pwd):/app ghcr.io/codelion/openevolve:latest \
-  examples/function_minimization/initial_program.py \
-  examples/function_minimization/evaluator.py --iterations 100
-```
+**Prefer Docker?** See the [Installation & Setup](#-installation--setup) section for Docker options.
 
 ## 🎬 See It In Action
 
@@ -207,10 +202,10 @@ OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes
 <details>
 <summary><b>🤖 Advanced LLM Integration</b></summary>
 
-- **Test-Time Compute**: Integration with [OptiLLM](https://github.com/codelion/optillm) for MoA and enhanced reasoning
-- **Universal API**: Works with OpenAI, Google, local models
-- **Plugin Ecosystem**: Support for OptiLLM plugins (readurls, executecode, z3_solver)
+- **Universal API**: Works with OpenAI, Google, local models, and proxies
 - **Intelligent Ensembles**: Weighted combinations with sophisticated fallback
+- **Test-Time Compute**: Enhanced reasoning through proxy systems (see [OptiLLM setup](#llm-provider-setup))
+- **Plugin Ecosystem**: Support for advanced reasoning plugins
 
 </details>
 
@@ -267,10 +262,33 @@ pip install -e ".[dev]"
 <summary><b>🐳 Docker</b></summary>
 
 ```bash
+# Pull the image
 docker pull ghcr.io/codelion/openevolve:latest
+
+# Run an example
+docker run --rm -v $(pwd):/app ghcr.io/codelion/openevolve:latest \
+  examples/function_minimization/initial_program.py \
+  examples/function_minimization/evaluator.py --iterations 100
 ```
 
 </details>
+
+### Cost Estimation
+
+**Cost depends on your LLM provider and iterations:**
+
+- **o3**: ~$0.15-0.60 per iteration (depending on code size)
+- **o3-mini**: ~$0.03-0.12 per iteration (more cost-effective)
+- **Gemini-2.5-Pro**: ~$0.08-0.30 per iteration
+- **Gemini-2.5-Flash**: ~$0.01-0.05 per iteration (fastest and cheapest)
+- **Local models**: Nearly free after setup
+- **OptiLLM**: Use cheaper models with test-time compute for better results
+
+**Cost-saving tips:**
+- Start with fewer iterations (100-200)
+- Use o3-mini, Gemini-2.5-Flash or local models for exploration
+- Use cascade evaluation to filter bad programs early
+- Configure smaller population sizes initially
 
 ### LLM Provider Setup
 
@@ -347,7 +365,7 @@ llm:
 | Project | Domain | Achievement | Demo |
 |---------|--------|-------------|------|
 | [🎯 **Function Minimization**](examples/function_minimization/) | Optimization | Random → Simulated Annealing | [View Results](examples/function_minimization/openevolve_output/) |
-| [⚡ **MLX GPU Kernels**](examples/mlx_metal_kernel_opt/) | Hardware | 2-3x Apple Silicon speedup | [Benchmarks](examples/mlx_metal_kernel_opt/README.md) |
+| [⚡ **MLX GPU Kernels**](examples/mlx_metal_kernel_opt/) | Hardware | Apple Silicon optimization | [Benchmarks](examples/mlx_metal_kernel_opt/README.md) |
 | [🔄 **Rust Adaptive Sort**](examples/rust_adaptive_sort/) | Algorithms | Data-aware sorting | [Code Evolution](examples/rust_adaptive_sort/) |
 | [📐 **Symbolic Regression**](examples/symbolic_regression/) | Science | Automated equation discovery | [LLM-SRBench](examples/symbolic_regression/) |
 | [🕸️ **Web Scraper + OptiLLM**](examples/web_scraper_optillm/) | AI Integration | Test-time compute optimization | [Smart Scraping](examples/web_scraper_optillm/) |
@@ -442,11 +460,11 @@ max_iterations: 1000
 random_seed: 42  # Full reproducibility
 
 llm:
-  # Ensemble with test-time compute
+  # Ensemble configuration
   models:
     - name: "gemini-2.5-pro"
       weight: 0.6
-    - name: "moa&readurls-o3"  # OptiLLM features
+    - name: "gemini-2.5-flash"
       weight: 0.4
   temperature: 0.7
 
@@ -635,53 +653,25 @@ prompt:
 <details>
 <summary><b>🎨 Prompt Engineering Patterns</b></summary>
 
-**Structure Your Message:**
-
-- Start with role definition ("You are an expert...")
-- Define the specific task and context
-- List optimization opportunities with examples
-- Set clear constraints and safety rules
-- End with success criteria
+**Structure Your Message:** Start with role definition → Define task/context → List optimization opportunities → Set constraints → Success criteria
 
 **Use Specific Examples:**
-
 ```yaml
-# Good: Specific optimization targets
-system_message: |
-  Focus on reducing memory allocations in the hot loop.
-  Example: Replace `new Vector()` with pre-allocated arrays.
-
-# Avoid: Vague guidance
-system_message: "Make the code faster"
+# Good: "Focus on reducing memory allocations. Example: Replace `new Vector()` with pre-allocated arrays."
+# Avoid: "Make the code faster"
 ```
 
 **Include Domain Knowledge:**
-
 ```yaml
-# Good: Domain-specific guidance
-system_message: |
-  For GPU kernels, prioritize:
-  1. Memory coalescing (access patterns)
-  2. Occupancy (thread utilization)
-  3. Shared memory usage (cache blocking)
-
-# Avoid: Generic optimization advice
-system_message: "Optimize the algorithm"
+# Good: "For GPU kernels: 1) Memory coalescing 2) Occupancy 3) Shared memory usage"
+# Avoid: "Optimize the algorithm"
 ```
 
 **Set Clear Boundaries:**
-
 ```yaml
 system_message: |
-  MUST NOT CHANGE:
-  ❌ Function signatures
-  ❌ Algorithm correctness
-  ❌ External API compatibility
-
-  ALLOWED TO OPTIMIZE:
-  ✅ Internal implementation details
-  ✅ Data structures and algorithms
-  ✅ Performance optimizations
+  MUST NOT CHANGE: ❌ Function signatures ❌ Algorithm correctness ❌ External API
+  ALLOWED: ✅ Internal implementation ✅ Data structures ✅ Performance optimizations
 ```
 
 </details>
@@ -689,55 +679,19 @@ system_message: |
 <details>
 <summary><b>🔬 Advanced Techniques</b></summary>
 
-**Artifact-Driven Iteration:**
+**Artifact-Driven Iteration:** Enable artifacts in config → Include common error patterns in system message → Add guidance based on stderr/warning patterns
 
-- Enable artifacts in your config
-- Include common error patterns in system message
-- Add guidance based on stderr/warning patterns
+**Multi-Phase Evolution:** Start broad ("Explore different algorithmic approaches"), then focus ("Given successful simulated annealing, focus on parameter tuning")
 
-**Multi-Phase Evolution:**
-
-```yaml
-# Phase 1: Broad exploration
-system_message: "Explore different algorithmic approaches..."
-
-# Phase 2: Focused optimization
-system_message: "Given the successful simulated annealing approach,
-focus on parameter tuning and cooling schedules..."
-```
-
-**Template Stochasticity:**
-
-```yaml
-prompt:
-  template_dir: "custom_templates/"
-  use_template_stochasticity: true
-  template_variations:
-    greeting:
-      - "Let's optimize this code:"
-      - "Time to enhance:"
-      - "Improving:"
-  # Then use {greeting} in your templates to get random variations
-```
+**Template Stochasticity:** See the [Configuration section](#-configuration) for complete template variation examples.
 
 </details>
 
 ### Meta-Evolution: Using OpenEvolve to Optimize Prompts
 
-**You can use OpenEvolve to evolve your system messages themselves!**
+**You can use OpenEvolve to evolve your system messages themselves!** This powerful technique lets you optimize prompts for better LLM performance automatically.
 
-```yaml
-# Example: Evolve prompts for HotpotQA dataset
-Initial Prompt: "Answer the question based on the context."
-
-Evolved Prompt: "As an expert analyst, carefully examine the provided context.
-Break down complex multi-hop reasoning into clear steps. Cross-reference
-information from multiple sources to ensure accuracy. Answer: [question]"
-
-Result: +23% accuracy improvement on HotpotQA benchmark
-```
-
-See the [LLM Prompt Optimization example](examples/llm_prompt_optimization/) for a complete implementation.
+See the [LLM Prompt Optimization example](examples/llm_prompt_optimization/) for a complete implementation, including the HotpotQA case study with +23% accuracy improvement.
 
 ### Common Pitfalls to Avoid
 
@@ -825,20 +779,7 @@ Want to contribute? Check out our [roadmap discussions](https://github.com/codel
 <details>
 <summary><b>💰 How much does it cost to run?</b></summary>
 
-**Cost depends on your LLM provider and iterations:**
-
-- **o3**: ~$0.15-0.60 per iteration (depending on code size)
-- **o3-mini**: ~$0.03-0.12 per iteration (more cost-effective)
-- **Gemini-2.5-Pro**: ~$0.08-0.30 per iteration
-- **Gemini-2.5-Flash**: ~$0.01-0.05 per iteration (fastest and cheapest)
-- **Local models**: Nearly free after setup
-- **OptiLLM**: Use cheaper models with test-time compute for better results
-
-**Cost-saving tips:**
-- Start with fewer iterations (100-200)
-- Use o3-mini, Gemini-2.5-Flash or local models for exploration
-- Use cascade evaluation to filter bad programs early
-- Configure smaller population sizes initially
+See the [Cost Estimation](#cost-estimation) section in Installation & Setup for detailed pricing information and cost-saving tips.
 
 </details>
 
@@ -929,7 +870,7 @@ We welcome contributions! Here's how to get started:
 
 **Articles & Blog Posts About OpenEvolve**:
 - [Towards Open Evolutionary Agents](https://huggingface.co/blog/driaforall/towards-open-evolutionary-agents) - Evolution of coding agents and the open-source movement
-- [OpenEvolve: GPU Kernel Discovery](https://huggingface.co/blog/codelion/openevolve-gpu-kernel-discovery) - Automated discovery of optimized GPU kernels with 2-3x speedups
+- [OpenEvolve: GPU Kernel Discovery](https://huggingface.co/blog/codelion/openevolve-gpu-kernel-discovery) - Automated discovery of optimized GPU kernels
 - [OpenEvolve: Evolutionary Coding with LLMs](https://huggingface.co/blog/codelion/openevolve) - Introduction to evolutionary algorithm discovery using large language models
 
 ## 📊 Citation
