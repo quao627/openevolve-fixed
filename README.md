@@ -15,7 +15,7 @@
   <a href="https://github.com/codelion/openevolve/blob/main/LICENSE"><img src="https://img.shields.io/github/license/codelion/openevolve" alt="License"></a>
 </p>
 
-[🚀 **Quick Start**](#-quick-start) • [📖 **Examples**](#-examples-gallery) • [📝 **System Messages**](#-crafting-effective-system-messages) • [💬 **Discussions**](https://github.com/codelion/openevolve/discussions)
+[🚀 **Quick Start**](#quick-start) • [**Examples**](#examples-gallery) • [**System Messages**](#crafting-effective-system-messages) • [**Discussions**](https://github.com/codelion/openevolve/discussions)
 
 *From random search to state-of-the-art: Watch your code evolve in real-time*
 
@@ -23,25 +23,25 @@
 
 ---
 
-## ✨ Why OpenEvolve?
+## Why OpenEvolve?
 
 <table>
 <tr>
 <td width="33%">
 
-### 🎯 **Autonomous Discovery**
+### **Autonomous Discovery**
 LLMs don't just optimize—they **discover** entirely new algorithms. No human guidance needed.
 
 </td>
 <td width="33%">
 
-### ⚡ **Proven Results** 
+### **Proven Results**
 **2-3x speedups** on real hardware. **State-of-the-art** circle packing. **Breakthrough** optimizations.
 
 </td>
 <td width="33%">
 
-### 🔬 **Research Grade**
+### **Research Grade**
 Full reproducibility, extensive evaluation pipelines, and scientific rigor built-in.
 
 </td>
@@ -58,11 +58,11 @@ Full reproducibility, extensive evaluation pipelines, and scientific rigor built
 | **Multi-objective** | Complex tradeoffs | Automatic Pareto optimization |
 | **Scaling** | Doesn't scale | Parallel evolution across islands |
 
-## 🏆 Proven Achievements
+## Proven Achievements
 
 <div align="center">
 
-| 🎯 **Domain** | 📈 **Achievement** | 🔗 **Example** |
+| **Domain** | **Achievement** | **Example** |
 |---------------|-------------------|----------------|
 | **GPU Optimization** | Hardware-optimized kernel discovery | [MLX Metal Kernels](examples/mlx_metal_kernel_opt/) |
 | **Mathematical** | State-of-the-art circle packing (n=26) | [Circle Packing](examples/circle_packing/) |
@@ -127,12 +127,12 @@ result = evolve_function(
 print(f"Evolved sorting algorithm: {result.best_code}")
 ```
 
-**Prefer Docker?** See the [Installation & Setup](#-installation--setup) section for Docker options.
+**Prefer Docker?** See the [Installation & Setup](#installation--setup) section for Docker options.
 
-## 🎬 See It In Action
+## See It In Action
 
 <details>
-<summary><b>🔥 Circle Packing: From Random to State-of-the-Art</b></summary>
+<summary><b>Circle Packing: From Random to State-of-the-Art</b></summary>
 
 **Watch OpenEvolve discover optimal circle packing in real-time:**
 
@@ -146,7 +146,7 @@ print(f"Evolved sorting algorithm: {result.best_code}")
 </details>
 
 <details>
-<summary><b>⚡ GPU Kernel Evolution</b></summary>
+<summary><b>GPU Kernel Evolution</b></summary>
 
 **Before (Baseline)**:
 ```metal
@@ -174,23 +174,23 @@ kernel void attention_evolved(/* ... */) {
 
 </details>
 
-## 🧬 How OpenEvolve Works
+## How OpenEvolve Works
 
 OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes far beyond simple optimization:
 
 ![OpenEvolve Architecture](openevolve-architecture.png)
 
-### 🎯 **Core Innovation**: MAP-Elites + LLMs
+### **Core Innovation**: MAP-Elites + LLMs
 
 - **Quality-Diversity Evolution**: Maintains diverse populations across feature dimensions
 - **Island-Based Architecture**: Multiple populations prevent premature convergence
 - **LLM Ensemble**: Multiple models with intelligent fallback strategies
 - **Artifact Side-Channel**: Error feedback improves subsequent generations
 
-### 🚀 **Advanced Features**
+### **Advanced Features**
 
 <details>
-<summary><b>🔬 Scientific Reproducibility</b></summary>
+<summary><b>Scientific Reproducibility</b></summary>
 
 - **Comprehensive Seeding**: Every component (LLM, database, evaluation) is seeded
 - **Default Seed=42**: Immediate reproducible results out of the box
@@ -200,7 +200,7 @@ OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes
 </details>
 
 <details>
-<summary><b>🤖 Advanced LLM Integration</b></summary>
+<summary><b>Advanced LLM Integration</b></summary>
 
 - **Universal API**: Works with OpenAI, Google, local models, and proxies
 - **Intelligent Ensembles**: Weighted combinations with sophisticated fallback
@@ -210,7 +210,7 @@ OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes
 </details>
 
 <details>
-<summary><b>🧬 Evolution Algorithm Innovations</b></summary>
+<summary><b>Evolution Algorithm Innovations</b></summary>
 
 - **Double Selection**: Different programs for performance vs inspiration
 - **Adaptive Feature Dimensions**: Custom quality-diversity metrics
@@ -219,15 +219,15 @@ OpenEvolve implements a sophisticated **evolutionary coding pipeline** that goes
 
 </details>
 
-## 🎯 Perfect For
+## Perfect For
 
 | **Use Case** | **Why OpenEvolve Excels** |
 |--------------|---------------------------|
-| 🏃‍♂️ **Performance Optimization** | Discovers hardware-specific optimizations humans miss |
-| 🧮 **Algorithm Discovery** | Finds novel approaches to classic problems |
-| 🔬 **Scientific Computing** | Automates tedious manual tuning processes |
-| 🎮 **Competitive Programming** | Generates multiple solution strategies |
-| 📊 **Multi-Objective Problems** | Pareto-optimal solutions across dimensions |
+| **Performance Optimization** | Discovers hardware-specific optimizations humans miss |
+| **Algorithm Discovery** | Finds novel approaches to classic problems |
+| **Scientific Computing** | Automates tedious manual tuning processes |
+| **Competitive Programming** | Generates multiple solution strategies |
+| **Multi-Objective Problems** | Pareto-optimal solutions across dimensions |
 
 ## 🛠 Installation & Setup
 
@@ -356,23 +356,23 @@ llm:
 
 </details>
 
-## 📸 Examples Gallery
+## Examples Gallery
 
 <div align="center">
 
-### 🏆 **Showcase Projects**
+### **Showcase Projects**
 
 | Project | Domain | Achievement | Demo |
 |---------|--------|-------------|------|
-| [🎯 **Function Minimization**](examples/function_minimization/) | Optimization | Random → Simulated Annealing | [View Results](examples/function_minimization/openevolve_output/) |
-| [⚡ **MLX GPU Kernels**](examples/mlx_metal_kernel_opt/) | Hardware | Apple Silicon optimization | [Benchmarks](examples/mlx_metal_kernel_opt/README.md) |
-| [🔄 **Rust Adaptive Sort**](examples/rust_adaptive_sort/) | Algorithms | Data-aware sorting | [Code Evolution](examples/rust_adaptive_sort/) |
-| [📐 **Symbolic Regression**](examples/symbolic_regression/) | Science | Automated equation discovery | [LLM-SRBench](examples/symbolic_regression/) |
-| [🕸️ **Web Scraper + OptiLLM**](examples/web_scraper_optillm/) | AI Integration | Test-time compute optimization | [Smart Scraping](examples/web_scraper_optillm/) |
+| [**Function Minimization**](examples/function_minimization/) | Optimization | Random → Simulated Annealing | [View Results](examples/function_minimization/openevolve_output/) |
+| [**MLX GPU Kernels**](examples/mlx_metal_kernel_opt/) | Hardware | Apple Silicon optimization | [Benchmarks](examples/mlx_metal_kernel_opt/README.md) |
+| [**Rust Adaptive Sort**](examples/rust_adaptive_sort/) | Algorithms | Data-aware sorting | [Code Evolution](examples/rust_adaptive_sort/) |
+| [**Symbolic Regression**](examples/symbolic_regression/) | Science | Automated equation discovery | [LLM-SRBench](examples/symbolic_regression/) |
+| [**Web Scraper + OptiLLM**](examples/web_scraper_optillm/) | AI Integration | Test-time compute optimization | [Smart Scraping](examples/web_scraper_optillm/) |
 
 </div>
 
-### 🎯 **Quick Example**: Function Minimization
+### **Quick Example**: Function Minimization
 
 **Watch OpenEvolve evolve from random search to sophisticated optimization:**
 
@@ -388,7 +388,7 @@ def minimize_function(func, bounds, max_evals=1000):
     return best_x, best_val
 ```
 
-**↓ Evolution Process ↓**
+**Evolution Process**
 
 ```python
 # Evolved Program (Simulated Annealing + Adaptive Cooling)
@@ -413,20 +413,9 @@ def minimize_function(func, bounds, max_evals=1000):
 ### 🔬 **Advanced Examples**
 
 <details>
-<summary><b>🎨 Prompt Evolution</b></summary>
+<summary><b>Prompt Evolution</b></summary>
 
-**Evolve prompts instead of code** for better LLM performance:
-
-```yaml
-# Example: HotpotQA dataset
-Initial Prompt: "Answer the question based on the context."
-
-Evolved Prompt: "As an expert analyst, carefully examine the provided context. 
-Break down complex multi-hop reasoning into clear steps. Cross-reference 
-information from multiple sources to ensure accuracy. Answer: [question]"
-
-Result: +23% accuracy improvement on HotpotQA benchmark
-```
+**Evolve prompts instead of code** for better LLM performance. See the [LLM Prompt Optimization example](examples/llm_prompt_optimization/) for a complete case study with HotpotQA achieving +23% accuracy improvement.
 
 [Full Example](examples/llm_prompt_optimization/)
 
@@ -683,7 +672,7 @@ system_message: |
 
 **Multi-Phase Evolution:** Start broad ("Explore different algorithmic approaches"), then focus ("Given successful simulated annealing, focus on parameter tuning")
 
-**Template Stochasticity:** See the [Configuration section](#-configuration) for complete template variation examples.
+**Template Stochasticity:** See the [Configuration section](#configuration) for complete template variation examples.
 
 </details>
 
@@ -892,8 +881,8 @@ If you use OpenEvolve in your research, please cite:
 
 ### **🚀 Ready to evolve your code?**
 
-**Made with ❤️ by the OpenEvolve community**
+**Maintained by the OpenEvolve community**
 
-*Star ⭐ this repository if OpenEvolve helps you discover breakthrough algorithms!*
+*If OpenEvolve helps you discover breakthrough algorithms, please consider starring this repository.*
 
 </div>
