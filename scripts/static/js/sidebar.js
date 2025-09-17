@@ -49,7 +49,7 @@ export function showSidebarContent(d, fromHover = false) {
     // Helper to render tab content
     function renderSidebarTabContent(tabName, d, children) {
         if (tabName === 'Code') {
-            return `<pre class="sidebar-code-pre">${d.code}</pre>`;
+            return `<pre class="sidebar-code-pre">${escapeHtml(d.code)}</pre>`;
         }
         if (tabName === 'Prompts') {
             // Prompt select logic
@@ -328,4 +328,15 @@ export function openInNewTab(event, d) {
 
 export function setSidebarSticky(val) {
     sidebarSticky = val;
+}
+
+// Helper to escape HTML so code can be shown verbatim inside <pre>
+function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
