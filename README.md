@@ -537,23 +537,27 @@ Based on successful OpenEvolve implementations, system messages are best created
 <summary><b>🔄 Step-by-Step Process</b></summary>
 
 **Phase 1: Initial Draft**
+
 1. Start with a basic system message describing your goal
 2. Run 20-50 evolution iterations to observe behavior
 3. Note where the system gets "stuck" or makes poor choices
 
 **Phase 2: Refinement**
+
 4. Add specific guidance based on observed issues
 5. Include domain-specific terminology and concepts
 6. Define clear constraints and optimization targets
 7. Run another batch of iterations
 
 **Phase 3: Specialization**
+
 8. Add detailed examples of good vs bad approaches
 9. Include specific library/framework guidance
 10. Add error avoidance patterns you've observed
 11. Fine-tune based on artifact feedback
 
 **Phase 4: Optimization**
+
 12. Consider using OpenEvolve itself to optimize your prompt
 13. Measure improvements using combined score metrics
 
@@ -626,6 +630,7 @@ prompt:
 <summary><b>🎨 Prompt Engineering Patterns</b></summary>
 
 **Structure Your Message:**
+
 - Start with role definition ("You are an expert...")
 - Define the specific task and context
 - List optimization opportunities with examples
@@ -633,6 +638,7 @@ prompt:
 - End with success criteria
 
 **Use Specific Examples:**
+
 ```yaml
 # Good: Specific optimization targets
 system_message: |
@@ -644,6 +650,7 @@ system_message: "Make the code faster"
 ```
 
 **Include Domain Knowledge:**
+
 ```yaml
 # Good: Domain-specific guidance
 system_message: |
@@ -657,6 +664,7 @@ system_message: "Optimize the algorithm"
 ```
 
 **Set Clear Boundaries:**
+
 ```yaml
 system_message: |
   MUST NOT CHANGE:
@@ -676,11 +684,13 @@ system_message: |
 <summary><b>🔬 Advanced Techniques</b></summary>
 
 **Artifact-Driven Iteration:**
+
 - Enable artifacts in your config
 - Include common error patterns in system message
 - Add guidance based on stderr/warning patterns
 
 **Multi-Phase Evolution:**
+
 ```yaml
 # Phase 1: Broad exploration
 system_message: "Explore different algorithmic approaches..."
@@ -691,6 +701,7 @@ focus on parameter tuning and cooling schedules..."
 ```
 
 **Template Variation:**
+
 ```yaml
 prompt:
   template_dir: "custom_templates/"
@@ -747,6 +758,7 @@ return EvaluationResult(
 ```
 
 **Next generation prompt automatically includes:**
+
 ```markdown
 ## Previous Execution Feedback
 ⚠️ Warning: suboptimal memory access pattern
@@ -772,6 +784,7 @@ python scripts/visualizer.py --path examples/function_minimization/openevolve_ou
 ```
 
 **Features:**
+
 - 🌳 **Evolution tree** with parent-child relationships
 - 📈 **Performance tracking** across generations
 - 🔍 **Code diff viewer** showing mutations
