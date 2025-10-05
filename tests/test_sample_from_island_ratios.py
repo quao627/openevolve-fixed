@@ -197,14 +197,17 @@ class TestSampleFromIslandRatios(unittest.TestCase):
             parent, _ = self.db.sample_from_island(island_id=0)
             sampled_scores.append(parent.metrics["score"])
 
-        # Average sampled score should be higher than median score of all programs
+        # Average sampled score should be higher than mean score of all programs
+        # (mean represents what uniform random sampling would produce)
         island_programs = [self.db.programs[pid] for pid in self.db.islands[0]]
         all_scores = [p.metrics["score"] for p in island_programs]
-        median_score = sorted(all_scores)[len(all_scores) // 2]
+        mean_score = sum(all_scores) / len(all_scores)
         avg_sampled_score = sum(sampled_scores) / len(sampled_scores)
 
-        # Weighted sampling should favor higher scores
-        self.assertGreater(avg_sampled_score, median_score)
+        # Weighted sampling should favor higher scores (shift average upward from mean)
+        self.assertGreater(avg_sampled_score, mean_score,
+                          f"Weighted sampling should favor high fitness: "
+                          f"sampled_avg={avg_sampled_score:.4f} should be > mean={mean_score:.4f}")
 
 
 class TestSampleFromIslandEdgeCases(unittest.TestCase):
