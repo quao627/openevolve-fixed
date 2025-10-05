@@ -368,87 +368,70 @@ class ProgramDatabase:
     ) -> Tuple[Program, List[Program]]:
         """
         Sample a program and inspirations from a specific island without modifying current_island
-        
+
         This method is thread-safe and doesn't modify shared state, avoiding race conditions
         when multiple workers sample from different islands concurrently.
-        
+
+        Uses the same exploration/exploitation/random strategy as sample() to ensure
+        consistent behavior between single-process and parallel execution modes.
+
         Args:
             island_id: The island to sample from
             num_inspirations: Number of inspiration programs to sample (defaults to 5)
-            
+
         Returns:
             Tuple of (parent_program, inspiration_programs)
         """
         # Ensure valid island ID
         island_id = island_id % len(self.islands)
-        
+
         # Get programs from the specific island
         island_programs = list(self.islands[island_id])
-        
+
         if not island_programs:
             # Island is empty, fall back to sampling from all programs
             logger.debug(f"Island {island_id} is empty, sampling from all programs")
             return self.sample(num_inspirations)
-        
-        # Select parent from island programs
-        if len(island_programs) == 1:
-            parent_id = island_programs[0]
+
+        # Use exploration_ratio and exploitation_ratio to decide sampling strategy
+        # This matches the logic in _sample_parent() for consistent behavior
+        rand_val = random.random()
+
+        if rand_val < self.config.exploration_ratio:
+            # EXPLORATION: Sample randomly from island (diverse sampling)
+            parent = self._sample_from_island_random(island_id)
+            sampling_mode = "exploration"
+        elif rand_val < self.config.exploration_ratio + self.config.exploitation_ratio:
+            # EXPLOITATION: Sample from archive (elite programs)
+            parent = self._sample_from_archive_for_island(island_id)
+            sampling_mode = "exploitation"
         else:
-            # Use weighted sampling based on program scores
-            island_program_objects = [
-                self.programs[pid] for pid in island_programs 
-                if pid in self.programs
-            ]
-            
-            if not island_program_objects:
-                # Fallback if programs not found
-                parent_id = random.choice(island_programs)
-            else:
-                # Calculate weights based on fitness scores
-                weights = []
-                for prog in island_program_objects:
-                    fitness = get_fitness_score(prog.metrics, self.config.feature_dimensions)
-                    # Add small epsilon to avoid zero weights
-                    weights.append(max(fitness, 0.001))
-                
-                # Normalize weights
-                total_weight = sum(weights)
-                if total_weight > 0:
-                    weights = [w / total_weight for w in weights]
-                else:
-                    weights = [1.0 / len(island_program_objects)] * len(island_program_objects)
-                
-                # Sample parent based on weights
-                parent = random.choices(island_program_objects, weights=weights, k=1)[0]
-                parent_id = parent.id
-        
-        parent = self.programs.get(parent_id)
-        if not parent:
-            # Should not happen, but handle gracefully
-            logger.error(f"Parent program {parent_id} not found in database")
-            return self.sample(num_inspirations)
-        
+            # WEIGHTED: Use fitness-weighted sampling (remaining probability)
+            parent = self._sample_from_island_weighted(island_id)
+            sampling_mode = "weighted"
+
         # Select inspirations from the same island
         if num_inspirations is None:
             num_inspirations = 5  # Default for backward compatibility
-            
+
         # Get other programs from the island for inspirations
-        other_programs = [pid for pid in island_programs if pid != parent_id]
-        
+        other_programs = [pid for pid in island_programs if pid != parent.id]
+
         if len(other_programs) < num_inspirations:
             # Not enough programs in island, use what we have
             inspiration_ids = other_programs
         else:
             # Sample inspirations
             inspiration_ids = random.sample(other_programs, num_inspirations)
-        
+
         inspirations = [
-            self.programs[pid] for pid in inspiration_ids 
+            self.programs[pid] for pid in inspiration_ids
             if pid in self.programs
         ]
-        
+
         logger.debug(
-            f"Sampled parent {parent.id} and {len(inspirations)} inspirations from island {island_id}"
+            f"Sampled parent {parent.id} and {len(inspirations)} inspirations from island {island_id} "
+            f"(mode: {sampling_mode}, rand_val: {rand_val:.3f})"
         )
         return parent, inspirations
 
@@ -1263,6 +1246,132 @@ class ProgramDatabase:
         # Sample randomly from all programs
         program_id = random.choice(list(self.programs.keys()))
         return self.programs[program_id]
+
+    def _sample_from_island_weighted(self, island_id: int) -> Program:
+        """
+        Sample a parent from a specific island using fitness-weighted selection
+
+        Args:
+            island_id: The island to sample from
+
+        Returns:
+            Parent program selected using fitness-weighted sampling
+        """
+        island_id = island_id % len(self.islands)
+        island_programs = list(self.islands[island_id])
+
+        if not island_programs:
+            # Island is empty, fall back to any available program
+            logger.debug(f"Island {island_id} is empty, sampling from all programs")
+            return self._sample_random_parent()
+
+        # Select parent from island programs
+        if len(island_programs) == 1:
+            parent_id = island_programs[0]
+        else:
+            # Use weighted sampling based on program scores
+            island_program_objects = [
+                self.programs[pid] for pid in island_programs
+                if pid in self.programs
+            ]
+
+            if not island_program_objects:
+                # Fallback if programs not found
+                parent_id = random.choice(island_programs)
+            else:
+                # Calculate weights based on fitness scores
+                weights = []
+                for prog in island_program_objects:
+                    fitness = get_fitness_score(prog.metrics, self.config.feature_dimensions)
+                    # Add small epsilon to avoid zero weights
+                    weights.append(max(fitness, 0.001))
+
+                # Normalize weights
+                total_weight = sum(weights)
+                if total_weight > 0:
+                    weights = [w / total_weight for w in weights]
+                else:
+                    weights = [1.0 / len(island_program_objects)] * len(island_program_objects)
+
+                # Sample parent based on weights
+                parent = random.choices(island_program_objects, weights=weights, k=1)[0]
+                parent_id = parent.id
+
+        parent = self.programs.get(parent_id)
+        if not parent:
+            # Should not happen, but handle gracefully
+            logger.error(f"Parent program {parent_id} not found in database")
+            return self._sample_random_parent()
+
+        return parent
+
+    def _sample_from_island_random(self, island_id: int) -> Program:
+        """
+        Sample a completely random parent from a specific island (uniform distribution)
+
+        Args:
+            island_id: The island to sample from
+
+        Returns:
+            Parent program selected uniformly at random
+        """
+        island_id = island_id % len(self.islands)
+        island_programs = list(self.islands[island_id])
+
+        if not island_programs:
+            # Island is empty, fall back to any available program
+            logger.debug(f"Island {island_id} is empty, sampling from all programs")
+            return self._sample_random_parent()
+
+        # Clean up stale references
+        valid_programs = [pid for pid in island_programs if pid in self.programs]
+
+        if not valid_programs:
+            logger.warning(f"Island {island_id} has no valid programs, falling back to random sampling")
+            return self._sample_random_parent()
+
+        # Uniform random selection
+        parent_id = random.choice(valid_programs)
+        return self.programs[parent_id]
+
+    def _sample_from_archive_for_island(self, island_id: int) -> Program:
+        """
+        Sample a parent from the archive, preferring programs from the specified island
+
+        Args:
+            island_id: The island to prefer programs from
+
+        Returns:
+            Parent program from archive (preferably from the specified island)
+        """
+        if not self.archive:
+            # Fallback to weighted sampling from island
+            logger.debug(f"Archive is empty, falling back to weighted island sampling")
+            return self._sample_from_island_weighted(island_id)
+
+        # Clean up stale references in archive
+        valid_archive = [pid for pid in self.archive if pid in self.programs]
+
+        if not valid_archive:
+            logger.warning("Archive has no valid programs, falling back to weighted island sampling")
+            return self._sample_from_island_weighted(island_id)
+
+        island_id = island_id % len(self.islands)
+
+        # Prefer programs from the specified island in archive
+        archive_programs_in_island = [
+            pid
+            for pid in valid_archive
+            if self.programs[pid].metadata.get("island") == island_id
+        ]
+
+        if archive_programs_in_island:
+            parent_id = random.choice(archive_programs_in_island)
+            return self.programs[parent_id]
+        else:
+            # Fall back to any valid archive program if island has none
+            parent_id = random.choice(valid_archive)
+            return self.programs[parent_id]
 
     def _sample_inspirations(self, parent: Program, n: int = 5) -> List[Program]:
         """
