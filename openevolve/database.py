@@ -806,7 +806,20 @@ class ProgramDatabase:
         coords = []
 
         for dim in self.config.feature_dimensions:
-            if dim == "complexity":
+            # PRIORITY 1: Check if this is a custom metric from the evaluator
+            # This allows users to override built-in features with their own implementations
+            if dim in program.metrics:
+                # Use custom metric from evaluator
+                score = program.metrics[dim]
+                # Update stats and scale
+                self._update_feature_stats(dim, score)
+                scaled_value = self._scale_feature_value(dim, score)
+                num_bins = self.feature_bins_per_dim.get(dim, self.feature_bins)
+                bin_idx = int(scaled_value * num_bins)
+                bin_idx = max(0, min(num_bins - 1, bin_idx))
+                coords.append(bin_idx)
+            # PRIORITY 2: Fall back to built-in features if not in metrics
+            elif dim == "complexity":
                 # Use code length as complexity measure
                 complexity = len(program.code)
                 bin_idx = self._calculate_complexity_bin(complexity)
@@ -833,21 +846,12 @@ class ProgramDatabase:
                     bin_idx = int(scaled_value * num_bins)
                     bin_idx = max(0, min(num_bins - 1, bin_idx))
                 coords.append(bin_idx)
-            elif dim in program.metrics:
-                # Use specific metric
-                score = program.metrics[dim]
-                # Update stats and scale
-                self._update_feature_stats(dim, score)
-                scaled_value = self._scale_feature_value(dim, score)
-                num_bins = self.feature_bins_per_dim.get(dim, self.feature_bins)
-                bin_idx = int(scaled_value * num_bins)
-                bin_idx = max(0, min(num_bins - 1, bin_idx))
-                coords.append(bin_idx)
             else:
                 # Feature not found - this is an error
                 raise ValueError(
                     f"Feature dimension '{dim}' specified in config but not found in program metrics. "
                     f"Available metrics: {list(program.metrics.keys())}. "
+                    f"Built-in features: 'complexity', 'diversity', 'score'. "
                     f"Either remove '{dim}' from feature_dimensions or ensure your evaluator returns it."
                 )
         # Only log coordinates at debug level for troubleshooting
