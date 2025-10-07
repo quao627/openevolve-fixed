@@ -1658,6 +1658,20 @@ class ProgramDatabase:
                     continue
 
                 for target_island in target_islands:
+                    # Skip migration if target island already has a program with identical code
+                    # Identical code produces identical metrics, so migration would be wasteful
+                    target_island_programs = [
+                        self.programs[pid] for pid in self.islands[target_island]
+                        if pid in self.programs
+                    ]
+                    has_duplicate_code = any(p.code == migrant.code for p in target_island_programs)
+
+                    if has_duplicate_code:
+                        logger.debug(
+                            f"Skipping migration of program {migrant.id[:8]} to island {target_island} "
+                            f"(duplicate code already exists)"
+                        )
+                        continue
                     # Create a copy for migration with simple new UUID
                     import uuid
                     migrant_copy = Program(

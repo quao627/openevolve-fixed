@@ -334,6 +334,72 @@ class TestMigrationNoDuplicates(unittest.TestCase):
             self.assertEqual(migrant_program.metrics["combined_score"], 0.9,
                            "Migrant should preserve high score")
 
+    def test_migration_skips_duplicate_code_on_target_island(self):
+        """Test that migration skips programs if target island already has identical code"""
+        # Create a program on island 0
+        prog_island_0 = Program(
+            id="prog_island_0",
+            code="def shared_code(): return 42",  # This code will be on both islands
+            language="python",
+            metrics={
+                "complexity": 50.0,
+                "diversity": 30.0,
+                "score": 0.8,
+                "combined_score": 0.8
+            },
+            metadata={"island": 0, "generation": 3},
+        )
+        self.db.add(prog_island_0)
+
+        # Create a program with IDENTICAL CODE on island 1 (target island)
+        prog_island_1 = Program(
+            id="prog_island_1",
+            code="def shared_code(): return 42",  # Same exact code
+            language="python",
+            metrics={
+                "complexity": 50.0,
+                "diversity": 30.0,
+                "score": 0.7,  # Different score, but same code
+                "combined_score": 0.7
+            },
+            metadata={"island": 1, "generation": 3},
+        )
+        self.db.add(prog_island_1, target_island=1)
+
+        # Set generations to trigger migration
+        self.db.island_generations[0] = 3
+        self.db.island_generations[1] = 3
+
+        # Count programs before migration
+        island_1_before = len([pid for pid in self.db.islands[1] if pid in self.db.programs])
+
+        # Trigger migration (island 0 should try to migrate to island 1)
+        self.db.migrate_programs()
+
+        # Count programs after migration
+        island_1_after = len([pid for pid in self.db.islands[1] if pid in self.db.programs])
+
+        # Check if any new programs were added to island 1
+        # Currently this will ADD a duplicate because we don't check for code duplication
+        # After the fix, island_1_after should equal island_1_before (no new programs)
+
+        # Count programs with the shared code on island 1
+        island_1_programs = [self.db.programs[pid] for pid in self.db.islands[1] if pid in self.db.programs]
+        shared_code_count = sum(1 for p in island_1_programs if p.code == "def shared_code(): return 42")
+
+        # CRITICAL TEST: Should be exactly 1 (the original prog_island_1)
+        # Migration should be skipped because identical code already exists
+        # This will FAIL with current implementation
+        self.assertEqual(shared_code_count, 1,
+                        f"Should not migrate duplicate code - found {shared_code_count} programs with identical code on island 1")
+
+        # Verify no unnecessary migration occurred
+        # The only program with this code should be the original
+        if shared_code_count == 1:
+            shared_code_programs = [p for p in island_1_programs if p.code == "def shared_code(): return 42"]
+            self.assertEqual(shared_code_programs[0].id, "prog_island_1",
+                           "Original program should remain, no migrant copy needed")
+
 
 if __name__ == '__main__':
     unittest.main()
