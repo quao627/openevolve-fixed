@@ -301,6 +301,10 @@ class ProgramDatabase:
                         self.archive.discard(existing_program_id)
                         self.archive.add(program.id)
 
+                # Remove replaced program from island set to keep it consistent with feature map
+                # This prevents accumulation of stale/replaced programs in the island
+                self.islands[island_idx].discard(existing_program_id)
+
             island_feature_map[feature_key] = program.id
 
         # Add to island
