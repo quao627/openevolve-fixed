@@ -288,18 +288,9 @@ class ProcessParallelController:
 
         # Number of worker processes
         self.num_workers = config.evaluator.parallel_evaluations
-
-        # Worker-to-island pinning for true island isolation
         self.num_islands = config.database.num_islands
-        self.worker_island_map = {}
-
-        # Distribute workers across islands using modulo
-        for worker_id in range(self.num_workers):
-            island_id = worker_id % self.num_islands
-            self.worker_island_map[worker_id] = island_id
 
         logger.info(f"Initialized process parallel controller with {self.num_workers} workers")
-        logger.info(f"Worker-to-island mapping: {self.worker_island_map}")
 
     def _serialize_config(self, config: Config) -> dict:
         """Serialize config object to a dictionary that can be pickled"""

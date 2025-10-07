@@ -301,6 +301,10 @@ class ProgramDatabase:
                         self.archive.discard(existing_program_id)
                         self.archive.add(program.id)
 
+                # Remove replaced program from island set to keep it consistent with feature map
+                # This prevents accumulation of stale/replaced programs in the island
+                self.islands[island_idx].discard(existing_program_id)
+
             island_feature_map[feature_key] = program.id
 
         # Add to island
@@ -806,7 +810,20 @@ class ProgramDatabase:
         coords = []
 
         for dim in self.config.feature_dimensions:
-            if dim == "complexity":
+            # PRIORITY 1: Check if this is a custom metric from the evaluator
+            # This allows users to override built-in features with their own implementations
+            if dim in program.metrics:
+                # Use custom metric from evaluator
+                score = program.metrics[dim]
+                # Update stats and scale
+                self._update_feature_stats(dim, score)
+                scaled_value = self._scale_feature_value(dim, score)
+                num_bins = self.feature_bins_per_dim.get(dim, self.feature_bins)
+                bin_idx = int(scaled_value * num_bins)
+                bin_idx = max(0, min(num_bins - 1, bin_idx))
+                coords.append(bin_idx)
+            # PRIORITY 2: Fall back to built-in features if not in metrics
+            elif dim == "complexity":
                 # Use code length as complexity measure
                 complexity = len(program.code)
                 bin_idx = self._calculate_complexity_bin(complexity)
@@ -833,21 +850,12 @@ class ProgramDatabase:
                     bin_idx = int(scaled_value * num_bins)
                     bin_idx = max(0, min(num_bins - 1, bin_idx))
                 coords.append(bin_idx)
-            elif dim in program.metrics:
-                # Use specific metric
-                score = program.metrics[dim]
-                # Update stats and scale
-                self._update_feature_stats(dim, score)
-                scaled_value = self._scale_feature_value(dim, score)
-                num_bins = self.feature_bins_per_dim.get(dim, self.feature_bins)
-                bin_idx = int(scaled_value * num_bins)
-                bin_idx = max(0, min(num_bins - 1, bin_idx))
-                coords.append(bin_idx)
             else:
                 # Feature not found - this is an error
                 raise ValueError(
                     f"Feature dimension '{dim}' specified in config but not found in program metrics. "
                     f"Available metrics: {list(program.metrics.keys())}. "
+                    f"Built-in features: 'complexity', 'diversity', 'score'. "
                     f"Either remove '{dim}' from feature_dimensions or ensure your evaluator returns it."
                 )
         # Only log coordinates at debug level for troubleshooting
@@ -1654,6 +1662,20 @@ class ProgramDatabase:
                     continue
 
                 for target_island in target_islands:
+                    # Skip migration if target island already has a program with identical code
+                    # Identical code produces identical metrics, so migration would be wasteful
+                    target_island_programs = [
+                        self.programs[pid] for pid in self.islands[target_island]
+                        if pid in self.programs
+                    ]
+                    has_duplicate_code = any(p.code == migrant.code for p in target_island_programs)
+
+                    if has_duplicate_code:
+                        logger.debug(
+                            f"Skipping migration of program {migrant.id[:8]} to island {target_island} "
+                            f"(duplicate code already exists)"
+                        )
+                        continue
                     # Create a copy for migration with simple new UUID
                     import uuid
                     migrant_copy = Program(
@@ -1666,23 +1688,15 @@ class ProgramDatabase:
                         metadata={**migrant.metadata, "island": target_island, "migrant": True},
                     )
 
-                    # Add to target island
-                    self.islands[target_island].add(migrant_copy.id)
-                    self.programs[migrant_copy.id] = migrant_copy
+                    # Use add() method to properly handle MAP-Elites deduplication,
+                    # feature map updates, and island tracking
+                    self.add(migrant_copy, target_island=target_island)
 
-                    # Update island-specific best program if migrant is better
-                    self._update_island_best_program(migrant_copy, target_island)
-
-                    # Log migration with MAP-Elites coordinates
-                    feature_coords = self._calculate_feature_coords(migrant_copy)
-                    coords_dict = {
-                        self.config.feature_dimensions[j]: feature_coords[j]
-                        for j in range(len(feature_coords))
-                    }
+                    # Log migration
                     logger.info(
-                        "Program migrated to island %d at MAP-Elites coords: %s",
+                        "Program %s migrated to island %d",
+                        migrant_copy.id[:8],
                         target_island,
-                        coords_dict,
                     )
 
         # Update last migration generation
