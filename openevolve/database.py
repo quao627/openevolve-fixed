@@ -1670,23 +1670,15 @@ class ProgramDatabase:
                         metadata={**migrant.metadata, "island": target_island, "migrant": True},
                     )
 
-                    # Add to target island
-                    self.islands[target_island].add(migrant_copy.id)
-                    self.programs[migrant_copy.id] = migrant_copy
+                    # Use add() method to properly handle MAP-Elites deduplication,
+                    # feature map updates, and island tracking
+                    self.add(migrant_copy, target_island=target_island)
 
-                    # Update island-specific best program if migrant is better
-                    self._update_island_best_program(migrant_copy, target_island)
-
-                    # Log migration with MAP-Elites coordinates
-                    feature_coords = self._calculate_feature_coords(migrant_copy)
-                    coords_dict = {
-                        self.config.feature_dimensions[j]: feature_coords[j]
-                        for j in range(len(feature_coords))
-                    }
+                    # Log migration
                     logger.info(
-                        "Program migrated to island %d at MAP-Elites coords: %s",
+                        "Program %s migrated to island %d",
+                        migrant_copy.id[:8],
                         target_island,
-                        coords_dict,
                     )
 
         # Update last migration generation
