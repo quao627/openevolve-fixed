@@ -586,16 +586,12 @@ class ProcessParallelController:
 
                     # Check target score
                     if target_score is not None and child_program.metrics:
-                        numeric_metrics = [
-                            v for v in child_program.metrics.values() if isinstance(v, (int, float))
-                        ]
-                        if numeric_metrics:
-                            avg_score = sum(numeric_metrics) / len(numeric_metrics)
-                            if avg_score >= target_score:
-                                logger.info(
-                                    f"Target score {target_score} reached at iteration {completed_iteration}"
-                                )
-                                break
+                        if ('combined_score' in child_program.metrics and
+                            child_program.metrics['combined_score'] >= target_score):
+                            logger.info(
+                                f"Target score {target_score} reached at iteration {completed_iteration}"
+                            )
+                            break
 
                     # Check early stopping
                     if early_stopping_enabled and child_program.metrics:
