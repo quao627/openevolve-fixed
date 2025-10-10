@@ -251,7 +251,7 @@ class ProgramDatabase:
         island_idx = island_idx % len(self.islands)  # Ensure valid island
 
         # Novelty check before adding
-        if not self._is_novel(program, island_idx):
+        if not self._is_novel(program.id, island_idx):
             logger.debug(f"Program {program.id} failed in novelty check and won't be added in the island {island_idx}")
             return program.id  # Do not add non-novel program
 

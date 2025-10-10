@@ -295,6 +295,10 @@ class ProcessParallelController:
     def _serialize_config(self, config: Config) -> dict:
         """Serialize config object to a dictionary that can be pickled"""
         # Manual serialization to handle nested objects properly
+
+        # The asdict() call itself triggers the deepcopy which tries to serialize novelty_llm. Remove it first.
+        config.database.novelty_llm = None
+        
         return {
             "llm": {
                 "models": [asdict(m) for m in config.llm.models],

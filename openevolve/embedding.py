@@ -38,7 +38,7 @@ class EmbeddingClient:
         """
         self.client, self.model = self._get_client_model(model_name)
     
-    def _get_client_model(model_name: str) -> tuple[openai.OpenAI, str]:
+    def _get_client_model(self, model_name: str) -> tuple[openai.OpenAI, str]:
         if model_name in OPENAI_EMBEDDING_MODELS:
             client = openai.OpenAI()
             model_to_use = model_name
