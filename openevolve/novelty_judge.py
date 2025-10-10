@@ -1,4 +1,7 @@
 """
+Adapted from SakanaAI/ShinkaEvolve (Apache-2.0 License)
+Original source: https://github.com/SakanaAI/ShinkaEvolve/blob/main/shinka/llm/embedding.py
+
 Prompt templates for novelty judging using LLMs.
 """
 
