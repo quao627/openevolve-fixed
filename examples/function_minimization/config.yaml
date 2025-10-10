@@ -28,6 +28,9 @@ database:
   elite_selection_ratio: 0.2
   exploitation_ratio: 0.7
 
+  embedding_model: "text-embedding-3-small"
+  similarity_threshold: 0.99
+
 # Evaluator configuration
 evaluator:
   timeout: 60
