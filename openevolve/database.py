@@ -72,6 +72,9 @@ class Program:
     artifacts_json: Optional[str] = None  # JSON-serialized small artifacts
     artifact_dir: Optional[str] = None  # Path to large artifact files
 
+    # Embedding vector for novelty rejection sampling
+    embedding: Optional[List[float]] = None
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation"""
         return asdict(self)
@@ -183,6 +186,13 @@ class ProgramDatabase:
             }
 
         logger.info(f"Initialized program database with {len(self.programs)} programs")
+        
+        # Novelty judge setup
+        from openevolve.embedding import EmbeddingClient
+        self.novelty_llm = config.novelty_llm
+        self.embedding_client = EmbeddingClient(config.embedding_model) if config.embedding_model else None
+        self.similarity_threshold = config.similarity_threshold
+            
 
     def add(
         self, program: Program, iteration: int = None, target_island: Optional[int] = None
@@ -239,6 +249,11 @@ class ProgramDatabase:
             island_idx = self.current_island
 
         island_idx = island_idx % len(self.islands)  # Ensure valid island
+
+        # Novelty check before adding
+        if not self._is_novel(program.id, island_idx):
+            logger.debug(f"Program {program.id} failed in novelty check and won't be added in the island {island_idx}")
+            return program.id  # Do not add non-novel program
 
         # Add to island-specific feature map (replacing existing if better)
         feature_key = self._feature_coords_to_key(feature_coords)
@@ -930,6 +945,120 @@ class ProgramDatabase:
             String key
         """
         return "-".join(str(c) for c in coords)
+
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
+        """
+        Adapted from SakanaAI/ShinkaEvolve (Apache-2.0 License)
+        Original source: https://github.com/SakanaAI/ShinkaEvolve/blob/main/shinka/database/dbase.py#L1452
+        
+        Compute cosine similarity between two vectors.
+        """
+        if not vec1 or not vec2 or len(vec1) != len(vec2):
+            return 0.0
+
+        arr1 = np.array(vec1, dtype=np.float32)
+        arr2 = np.array(vec2, dtype=np.float32)
+
+        norm_a = np.linalg.norm(arr1)
+        norm_b = np.linalg.norm(arr2)
+
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+
+        similarity = np.dot(arr1, arr2) / (norm_a * norm_b)
+        
+        return float(similarity)
+    
+    def _llm_judge_novelty(self, program: Program, similar_program: Program) -> bool:
+        """
+        Use LLM to judge if a program is novel compared to a similar existing program
+        """
+        import asyncio
+        from openevolve.novelty_judge import NOVELTY_SYSTEM_MSG, NOVELTY_USER_MSG
+        
+        user_msg = NOVELTY_USER_MSG.format(
+            language=program.language,
+            existing_code=similar_program.code,
+            proposed_code=program.code,
+        )
+        
+        try:
+            content: str = asyncio.run(
+                self.novelty_llm.generate_with_context(
+                    system_msg=NOVELTY_SYSTEM_MSG,
+                    messages=[{"role": "user", "content": user_msg}],
+                )
+            )
+
+            if content is None or content is None:
+                logger.warning("Novelty LLM returned empty response")
+                return True
+
+            content = content.strip()
+
+            # Parse the response
+            NOVEL_i = content.upper().find("NOVEL")
+            NOT_NOVEL_i = content.upper().find("NOT NOVEL")
+            
+            if NOVEL_i == -1 and NOT_NOVEL_i == -1:
+                logger.warning(f"Unexpected novelty LLM response: {content}")
+                return True  # Assume novel if we can't parse
+            
+            if NOVEL_i != -1 and NOT_NOVEL_i != -1:
+                # Both found, take the one that appears first
+                is_novel = NOVEL_i < NOT_NOVEL_i
+            elif NOVEL_i != -1:
+                is_novel = True
+            else:
+                is_novel = False
+                
+            return is_novel
+
+        except Exception as e:
+            logger.error(f"Error in novelty LLM check: {e}")
+    
+        return True
+    
+    def _is_novel(self, program_id: int, island_idx: int) -> bool:
+        """
+        Determine if a program is novel based on diversity to existing programs
+
+        Args:
+            program: Program to check
+            island_idx: Island index
+            
+        Returns:
+            True if novel, False otherwise
+        """
+        if self.embedding_client is None or self.similarity_threshold <= 0.0:
+            # Novelty checking disabled
+            return True
+
+        program = self.programs[program_id]
+        embd = self.embedding_client.get_embedding(program.code)
+        self.programs[program_id].embedding = embd
+        
+        max_smlty = float('-inf')
+        max_smlty_pid = None
+        
+        for pid in self.islands[island_idx]:
+            other = self.programs[pid]
+            
+            if other.embedding is None:
+                logger.log("Warning: Program %s has no embedding, skipping similarity check", other.id)
+                continue
+            
+            similarity = self._cosine_similarity(embd, other.embedding)
+            
+            if similarity >= max(max_smlty, self.similarity_threshold):
+                max_smlty = similarity
+                max_smlty_pid = pid
+            
+        if max_smlty_pid is None:
+            # No similar programs found, consider it novel
+            return True
+            
+        return self._llm_judge_novelty(program, self.programs[max_smlty_pid])
 
     def _is_better(self, program1: Program, program2: Program) -> bool:
         """
