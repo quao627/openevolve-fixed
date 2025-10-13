@@ -426,7 +426,7 @@ class ProcessParallelController:
         completed_iterations = 0
 
         # Island management
-        programs_per_island = max(1, max_iterations // (self.config.database.num_islands * 10))
+        programs_per_island = self.config.database.programs_per_island or max(1, max_iterations // (self.config.database.num_islands * 10))
         current_island_counter = 0
 
         # Early stopping tracking
