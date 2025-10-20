@@ -93,9 +93,7 @@ def verify_c4_solution_strict(
         raise ValueError(f"C4 mismatch: reported {reported_c4:.12f}, recomputed {c4:.12f}")
 
     if not np.isclose(rmax, reported_rmax, rtol=rtol, atol=atol):
-        raise ValueError(
-            f"r_max mismatch: reported {reported_rmax:.12f}, recomputed {rmax:.12f}"
-        )
+        raise ValueError(f"r_max mismatch: reported {reported_rmax:.12f}, recomputed {rmax:.12f}")
 
     return c4, rmax
 
@@ -121,17 +119,14 @@ def evaluate(program_path: str):
         c4, rmax = verify_c4_solution_strict(coeffs, float(c4_bound), float(r_max))
 
         return {
-                "c4_bound": float(c4),
-                "combined_score": float(BENCHMARK / c4),
-                "r_max": float(rmax),
-                "coeffs": coeffs.tolist(),
-                "eval_time": float(t1 - t0)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "c4_bound": float(c4),
+            "combined_score": float(BENCHMARK / c4),
+            "r_max": float(rmax),
+            "coeffs": coeffs.tolist(),
+            "eval_time": float(t1 - t0),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}
 
 
 if __name__ == "__main__":

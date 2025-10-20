@@ -79,14 +79,11 @@ def evaluate(program_path: str):
         verify_c6_solution(u_set, c6_bound)
 
         return {
-                "c6_bound": float(c6_bound),
-                "combined_score": float(c6_bound) / BENCHMARK,
-                "set_size": len(u_set),
-                "max_val": int(np.max(u_set)),
-                "eval_time": float(eval_time),
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "c6_bound": float(c6_bound),
+            "combined_score": float(c6_bound) / BENCHMARK,
+            "set_size": len(u_set),
+            "max_val": int(np.max(u_set)),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

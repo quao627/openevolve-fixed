@@ -96,9 +96,7 @@ class DiscreteOptimizer:
 
     def _loss_fn(self, continuous_decomposition: tuple) -> jnp.ndarray:
         # Snap the continuous parameters to the discrete grid
-        discrete_decomposition = jax.tree_util.tree_map(
-            round_to_half_ste, continuous_decomposition
-        )
+        discrete_decomposition = jax.tree_util.tree_map(round_to_half_ste, continuous_decomposition)
         # Compute the loss using only these exact half-integer values
         reconstructed = jnp.einsum("ir,jr,kr->ijk", *discrete_decomposition)
         return l2_loss_real(reconstructed, self.target_tensor)

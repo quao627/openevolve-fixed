@@ -77,14 +77,11 @@ def evaluate(program_path: str):
         c2_verified = verify_c2_solution(f_values, c2_achieved_from_opt, n_points)
 
         return {
-                "c2": float(c2_verified),
-                "combined_score": float(c2_verified) / BENCHMARK,
-                "loss": float(loss),
-                "n_points": int(n_points),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "c2": float(c2_verified),
+            "combined_score": float(c2_verified) / BENCHMARK,
+            "loss": float(loss),
+            "n_points": int(n_points),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

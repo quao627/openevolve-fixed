@@ -70,14 +70,11 @@ def evaluate(program_path: str):
         verify_c3_solution(f_values, c3_achieved, n_points)
 
         return {
-                "c3": float(c3_achieved),
-                "combined_score": BENCHMARK / float(c3_achieved),
-                "loss": float(loss),
-                "n_points": int(n_points),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "c3": float(c3_achieved),
+            "combined_score": BENCHMARK / float(c3_achieved),
+            "loss": float(loss),
+            "n_points": int(n_points),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

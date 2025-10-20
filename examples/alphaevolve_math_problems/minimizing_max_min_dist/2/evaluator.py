@@ -57,12 +57,9 @@ def evaluate(program_path: str):
 
         inv_ratio_squared = (min_distance / max_distance) ** 2 if max_distance > 0 else 0
         return {
-                "min_max_ratio": float(inv_ratio_squared),
-                "combined_score": float(inv_ratio_squared / BENCHMARK),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "min_max_ratio": float(inv_ratio_squared),
+            "combined_score": float(inv_ratio_squared / BENCHMARK),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

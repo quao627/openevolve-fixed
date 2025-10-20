@@ -103,12 +103,9 @@ def evaluate(program_path: str):
         radii_sum = np.sum(circles[:, -1])
 
         return {
-                "radii_sum": float(radii_sum),
-                "combined_score": float(radii_sum / BENCHMARK),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "radii_sum": float(radii_sum),
+            "combined_score": float(radii_sum / BENCHMARK),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

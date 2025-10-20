@@ -168,8 +168,7 @@ def get_c4_from_params(params: np.ndarray, hypers: Hyperparameters):
 
     # Enforce P(0) = 0
     c0 = (
-        -(np.sum(c_others * H_vals_at_zero[1:-1]) + c_last * H_vals_at_zero[-1])
-        / H_vals_at_zero[0]
+        -(np.sum(c_others * H_vals_at_zero[1:-1]) + c_last * H_vals_at_zero[-1]) / H_vals_at_zero[0]
     )
     hermite_coeffs = np.concatenate([[c0], np.array(c_others), [c_last]])
 

@@ -67,13 +67,10 @@ def evaluate(program_path: str):
         verify_c5_solution(h_values, c5_bound, n_points)
 
         return {
-                "c5_bound": float(c5_bound),
-                "combined_score": BENCHMARK / float(c5_bound),
-                "n_points": int(n_points),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "c5_bound": float(c5_bound),
+            "combined_score": BENCHMARK / float(c5_bound),
+            "n_points": int(n_points),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

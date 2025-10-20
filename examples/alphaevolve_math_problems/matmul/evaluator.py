@@ -98,13 +98,10 @@ def evaluate(program_path: str):
         inverse_rank = BENCHMARK / rank
 
         return {
-                "combined_score": inverse_rank,
-                "loss": loss,
-                "rank": rank,
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "combined_score": inverse_rank,
+            "loss": loss,
+            "rank": rank,
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

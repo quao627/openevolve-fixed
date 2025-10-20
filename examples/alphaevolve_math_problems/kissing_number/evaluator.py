@@ -86,13 +86,10 @@ def evaluate(program_path: str):
 
         num_points = len(points)
         benchmark_ratio = num_points / BENCHMARK
-        return  {
-                "num_points": num_points,
-                "combined_score": float(benchmark_ratio),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
         return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "num_points": num_points,
+            "combined_score": float(benchmark_ratio),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

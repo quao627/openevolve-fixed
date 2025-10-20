@@ -175,9 +175,7 @@ def verify_construction(
     # Disjointness check.
     for i in range(len(inner_hex_params_list)):
         for j in range(i + 1, len(inner_hex_params_list)):
-            if not hexagons_are_disjoint(
-                inner_hex_params_list[i], inner_hex_params_list[j], tol
-            ):
+            if not hexagons_are_disjoint(inner_hex_params_list[i], inner_hex_params_list[j], tol):
                 raise AssertionError(f"Hexagons {i+1} and {j+1} intersect!")
     # Containment check.
     if not all_hexagons_contained(inner_hex_params_list, outer_hex_params, tol):
@@ -228,12 +226,9 @@ def evaluate(program_path: str):
         inv_outer_hex_side_length = float(1 / outer_hex_side_length)
 
         return {
-                "inv_outer_hex_side_length": inv_outer_hex_side_length,
-                "combined_score": float(inv_outer_hex_side_length / BENCHMARK),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "inv_outer_hex_side_length": inv_outer_hex_side_length,
+            "combined_score": float(inv_outer_hex_side_length / BENCHMARK),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

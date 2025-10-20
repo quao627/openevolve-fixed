@@ -76,16 +76,12 @@ def evaluate(program_path: str):
                 sys.path.remove(program_dir)
 
         verify_autocorrelation_solution(f_values, c1_achieved, n_points)
-        return  {
-                "c1": float(c1_achieved),
-                "combined_score": BENCHMARK / float(c1_achieved),
-                "loss": float(loss),
-                "n_points": int(n_points),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
         return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "c1": float(c1_achieved),
+            "combined_score": BENCHMARK / float(c1_achieved),
+            "loss": float(loss),
+            "n_points": int(n_points),
+            "eval_time": float(eval_time),
         }
-    
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}

@@ -64,12 +64,9 @@ def evaluate(program_path: str):
         min_area_normalized = min_triangle_area / convex_hull_area
 
         return {
-                "min_area_normalized": float(min_area_normalized),
-                "combined_score": float(min_area_normalized / BENCHMARK),
-                "eval_time": float(eval_time)
-                }
-    except Exception as e:
-        return {
-            'combined_score': 0.0,
-            'error': str(e)
+            "min_area_normalized": float(min_area_normalized),
+            "combined_score": float(min_area_normalized / BENCHMARK),
+            "eval_time": float(eval_time),
         }
+    except Exception as e:
+        return {"combined_score": 0.0, "error": str(e)}
