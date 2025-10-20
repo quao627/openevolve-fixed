@@ -11,7 +11,7 @@
 #
 # ===--------------------------------------------------------------------------------------===#
 
-import sys, os, time, json, numpy as np
+import sys, os, time, numpy as np
 import sympy as sp
 
 BENCHMARK = 0.3215872333529007
@@ -127,7 +127,3 @@ def evaluate(program_path: str):
         }
     except Exception as e:
         return {"combined_score": 0.0, "error": str(e)}
-
-
-if __name__ == "__main__":
-    evaluate(sys.argv[1], sys.argv[2])
