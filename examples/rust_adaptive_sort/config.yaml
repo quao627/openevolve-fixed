@@ -15,7 +15,7 @@ llm:
   api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
   
   temperature: 0.7
-  max_tokens: 4096
+  max_tokens: 16384
   
   # Custom system message for Rust performance programming
   system_message: |
