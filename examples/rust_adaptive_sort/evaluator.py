@@ -4,19 +4,17 @@ Evaluator for Rust adaptive sorting example
 
 import asyncio
 import json
-import os
 import subprocess
 import tempfile
-import time
 from pathlib import Path
-from typing import Dict, Any, List
-
-import numpy as np
-
 from openevolve.evaluation_result import EvaluationResult
 
 
-async def evaluate(program_path: str) -> EvaluationResult:
+def evaluate(program_path: str) -> EvaluationResult:
+    return asyncio.run(_evaluate(program_path))
+
+
+async def _evaluate(program_path: str) -> EvaluationResult:
     """
     Evaluate a Rust sorting algorithm implementation.
 
@@ -41,7 +39,10 @@ async def evaluate(program_path: str) -> EvaluationResult:
             if result.returncode != 0:
                 return EvaluationResult(
                     metrics={"score": 0.0, "compile_success": 0.0},
-                    artifacts={"error": "Failed to create Cargo project", "stderr": result.stderr},
+                    artifacts={
+                        "error": "Failed to create Cargo project",
+                        "stderr": result.stderr,
+                    },
                 )
 
             # Copy the program to src/lib.rs
@@ -305,7 +306,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1:
-        result = asyncio.run(evaluate(sys.argv[1]))
+        result = evaluate(sys.argv[1])
         print(f"Score: {result.metrics['score']:.4f}")
         print(f"Correctness: {result.metrics['correctness']:.4f}")
         print(f"Performance: {result.metrics['performance_score']:.4f}")
