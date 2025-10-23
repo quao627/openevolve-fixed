@@ -8,10 +8,20 @@ import subprocess
 import tempfile
 from pathlib import Path
 from openevolve.evaluation_result import EvaluationResult
+import logging
+logger = logging.getLogger("examples.rust_adaptive_sort.evaluator")
+
 
 
 def evaluate(program_path: str) -> EvaluationResult:
-    return asyncio.run(_evaluate(program_path))
+    result = asyncio.run(_evaluate(program_path))
+    if "error" in result.artifacts:
+        logger.error(f"Error evaluating program: {result.artifacts['error']}")
+        if "stderr" in result.artifacts:
+            logger.error(f"Stderr: {result.artifacts['stderr']}")
+        if "stdout" in result.artifacts:
+            logger.error(f"Stdout: {result.artifacts['stdout']}")
+    return result
 
 
 async def _evaluate(program_path: str) -> EvaluationResult:
