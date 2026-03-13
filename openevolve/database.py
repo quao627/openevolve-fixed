@@ -587,13 +587,12 @@ class ProgramDatabase:
 
         return sorted_programs[:n]
 
-    def save(self, path: Optional[str] = None, iteration: int = 0) -> None:
+    def save(self, path: Optional[str] = None) -> None:
         """
         Save the database to disk
 
         Args:
             path: Path to save to (uses config.db_path if None)
-            iteration: Current iteration number
         """
         save_path = path or self.config.db_path
         if not save_path:
@@ -624,7 +623,7 @@ class ProgramDatabase:
             "archive": list(self.archive),
             "best_program_id": self.best_program_id,
             "island_best_programs": self.island_best_programs,
-            "last_iteration": iteration or self.last_iteration,
+            "last_iteration": self.last_iteration,
             "current_island": self.current_island,
             "island_generations": self.island_generations,
             "last_migration_generation": self.last_migration_generation,

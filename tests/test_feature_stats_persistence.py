@@ -60,7 +60,7 @@ class TestFeatureStatsPersistence(unittest.TestCase):
         }
 
         # Save checkpoint
-        db1.save(self.test_dir, iteration=42)
+        db1.save(self.test_dir)
 
         # Load into new database
         db2 = ProgramDatabase(self.config)
@@ -82,7 +82,7 @@ class TestFeatureStatsPersistence(unittest.TestCase):
         db1 = ProgramDatabase(self.config)
 
         # Save without any programs (empty feature_stats)
-        db1.save(self.test_dir, iteration=1)
+        db1.save(self.test_dir)
 
         # Load and verify
         db2 = ProgramDatabase(self.config)
@@ -182,7 +182,7 @@ class TestFeatureStatsPersistence(unittest.TestCase):
             original_ranges[dim] = {"min": stats["min"], "max": stats["max"]}
 
         # Save checkpoint
-        db1.save(self.test_dir, iteration=50)
+        db1.save(self.test_dir)
 
         # Load into new database
         db2 = ProgramDatabase(self.config)

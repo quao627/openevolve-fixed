@@ -56,7 +56,7 @@ class TestGridStability(unittest.TestCase):
             }
 
         # Save checkpoint
-        db1.save(self.test_dir, iteration=25)
+        db1.save(self.test_dir)
 
         # Phase 2: Resume from checkpoint
         db2 = ProgramDatabase(config)
@@ -137,7 +137,7 @@ class TestGridStability(unittest.TestCase):
         original_time_max = db1.feature_stats["execution_time"]["max"]
 
         # Save checkpoint
-        db1.save(self.test_dir, iteration=30)
+        db1.save(self.test_dir)
 
         # Phase 2: Resume and add program outside range
         db2 = ProgramDatabase(config)
@@ -189,7 +189,7 @@ class TestGridStability(unittest.TestCase):
         for dim, stats in db1.feature_stats.items():
             cycle1_stats[dim] = {"min": stats["min"], "max": stats["max"]}
 
-        db1.save(self.test_dir, iteration=10)
+        db1.save(self.test_dir)
 
         # Cycle 2: Load and verify stats preservation
         db2 = ProgramDatabase(config)
@@ -215,7 +215,7 @@ class TestGridStability(unittest.TestCase):
         for dim, stats in db2.feature_stats.items():
             cycle2_stats[dim] = {"min": stats["min"], "max": stats["max"]}
 
-        db2.save(self.test_dir, iteration=20)
+        db2.save(self.test_dir)
 
         # Cycle 3: Verify stats are still preserved
         db3 = ProgramDatabase(config)
@@ -256,7 +256,7 @@ class TestGridStability(unittest.TestCase):
         phase1_score_values = set(db1.feature_stats["score"]["values"])
         phase1_complexity_values = set(db1.feature_stats["complexity"]["values"])
 
-        db1.save(self.test_dir, iteration=15)
+        db1.save(self.test_dir)
 
         # Cycle 2: Load and add more programs
         db2 = ProgramDatabase(config)

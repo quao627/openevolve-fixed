@@ -3,8 +3,10 @@ Process-based parallel controller for true parallelism
 """
 
 import asyncio
+import json
 import logging
 import multiprocessing as mp
+import os
 import pickle
 import signal
 import time
@@ -342,12 +344,14 @@ class ProcessParallelController:
         database: ProgramDatabase,
         evolution_tracer=None,
         file_suffix: str = ".py",
+        output_dir: Optional[str] = None,
     ):
         self.config = config
         self.evaluation_file = evaluation_file
         self.database = database
         self.evolution_tracer = evolution_tracer
         self.file_suffix = file_suffix
+        self.output_dir = output_dir
 
         self.executor: Optional[ProcessPoolExecutor] = None
         self.shutdown_event = mp.Event()
@@ -356,6 +360,11 @@ class ProcessParallelController:
         # Number of worker processes
         self.num_workers = config.evaluator.parallel_evaluations
         self.num_islands = config.database.num_islands
+
+        # Per-iteration log file (JSONL)
+        self._evolution_log_path: Optional[str] = None
+        if output_dir:
+            self._evolution_log_path = os.path.join(output_dir, "evolution_log.jsonl")
 
         logger.info(f"Initialized process parallel controller with {self.num_workers} workers")
 
@@ -392,6 +401,28 @@ class ProcessParallelController:
             "language": config.language,
             "file_suffix": self.file_suffix,
         }
+
+    def _log_iteration_result(
+        self, iteration: int, child_program: Program, parent_id: Optional[str], iteration_time: float
+    ) -> None:
+        """Append a single JSON line to the evolution log for this iteration."""
+        if not self._evolution_log_path:
+            return
+        entry = {
+            "iteration": iteration,
+            "child_id": child_program.id,
+            "parent_id": parent_id,
+            "metrics": child_program.metrics,
+            "generation": child_program.generation,
+            "island": child_program.metadata.get("island"),
+            "iteration_time": round(iteration_time, 3),
+            "timestamp": child_program.timestamp,
+        }
+        try:
+            with open(self._evolution_log_path, "a") as f:
+                f.write(json.dumps(entry) + "\n")
+        except OSError:
+            logger.debug("Failed to write evolution log entry", exc_info=True)
 
     def start(self) -> None:
         """Start the process pool"""
@@ -656,6 +687,11 @@ class ProcessParallelController:
                                 f"metric that properly weights different aspects of program performance."
                             )
                             self._warned_about_combined_score = True
+
+                    # Log iteration result to JSONL
+                    self._log_iteration_result(
+                        completed_iteration, child_program, result.parent_id, result.iteration_time
+                    )
 
                     # Check for new best
                     if self.database.best_program_id == child_program.id:

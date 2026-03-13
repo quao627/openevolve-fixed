@@ -53,6 +53,11 @@ htmlcov/
 .DS_Store
 .venv
 
+# Data / local files
+.env
+tmp/
+analysis.png
+
 # For SR
 secrets.yaml
 problems
