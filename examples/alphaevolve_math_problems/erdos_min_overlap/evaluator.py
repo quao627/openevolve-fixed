@@ -18,7 +18,7 @@ import time
 import numpy as np
 
 # Known bounds
-BENCHMARK = 0.38092303510845016
+BENCHMARK = 0.380871
 
 
 def verify_c5_solution(h_values: np.ndarray, c5_achieved: float, n_points: int):

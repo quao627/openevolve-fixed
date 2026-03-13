@@ -79,6 +79,9 @@ class LLMModelConfig:
     # Reasoning parameters
     reasoning_effort: Optional[str] = None
 
+    # Extra body parameters (e.g., OpenRouter provider routing)
+    extra_body: Optional[Dict[str, Any]] = None
+
     # Manual mode (human-in-the-loop)
     manual_mode: Optional[bool] = None
     _manual_queue_dir: Optional[str] = None
@@ -179,6 +182,7 @@ class LLMConfig(LLMModelConfig):
             "random_seed": self.random_seed,
             "reasoning_effort": self.reasoning_effort,
             "manual_mode": self.manual_mode,
+            "extra_body": self.extra_body,
         }
         self.update_model_params(shared_config)
 
@@ -232,6 +236,7 @@ class LLMConfig(LLMModelConfig):
             "retry_delay": self.retry_delay,
             "random_seed": self.random_seed,
             "reasoning_effort": self.reasoning_effort,
+            "extra_body": self.extra_body,
         }
         self.update_model_params(shared_config)
 
@@ -498,11 +503,22 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
     else:
         config = Config()
 
-        # Use environment variables if available
-        api_key = os.environ.get("OPENAI_API_KEY")
-        api_base = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1")
-
-        config.llm.update_model_params({"api_key": api_key, "api_base": api_base})
+    # Fall back to environment variables for api_key/api_base when not set in config
+    if not config.llm.api_key:
+        api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get(
+            "OPENAI_API_KEY"
+        )
+        if api_key:
+            config.llm.update_model_params({"api_key": api_key})
+    if not config.llm.api_base:
+        if os.environ.get("OPENROUTER_API_KEY"):
+            api_base = os.environ.get(
+                "OPENAI_API_BASE", "https://openrouter.ai/api/v1"
+            )
+        else:
+            api_base = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1")
+        if api_base:
+            config.llm.update_model_params({"api_base": api_base})
 
     # Make the system message available to the individual models, in case it is not provided from the prompt sampler
     config.llm.update_model_params({"system_message": config.prompt.system_message})

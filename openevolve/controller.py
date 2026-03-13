@@ -333,6 +333,7 @@ class OpenEvolve:
                 self.database,
                 self.evolution_tracer,
                 file_suffix=self.config.file_suffix,
+                output_dir=self.output_dir,
             )
 
             # Set up signal handlers for graceful shutdown
@@ -453,7 +454,7 @@ class OpenEvolve:
         os.makedirs(checkpoint_path, exist_ok=True)
 
         # Save the database
-        self.database.save(checkpoint_path, iteration)
+        self.database.save(checkpoint_path)
 
         # Save the best program found so far
         best_program = None
@@ -519,17 +520,13 @@ class OpenEvolve:
         # Check if shutdown or early stopping was triggered
         if self.parallel_controller.shutdown_event.is_set():
             logger.info("Evolution stopped due to shutdown request")
-            return
         elif self.parallel_controller.early_stopping_triggered:
-            logger.info("Evolution stopped due to early stopping - saving final checkpoint")
-            # Continue to save final checkpoint for early stopping
+            logger.info("Evolution stopped due to early stopping")
 
-        # Save final checkpoint if needed
-        # Note: start_iteration here is the evolution start (1 for fresh start, not 0)
-        # max_iterations is the number of evolution iterations to run
-        final_iteration = start_iteration + max_iterations - 1
-        if final_iteration > 0 and final_iteration % self.config.checkpoint_interval == 0:
-            self._save_checkpoint(final_iteration)
+        # Always save a final checkpoint using the database's actual last iteration,
+        # which reflects the highest iteration that was successfully processed
+        if self.database.last_iteration > 0:
+            self._save_checkpoint(self.database.last_iteration)
 
     def _save_best_program(self, program: Optional[Program] = None) -> None:
         """

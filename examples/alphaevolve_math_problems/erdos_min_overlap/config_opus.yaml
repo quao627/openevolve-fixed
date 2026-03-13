@@ -1,0 +1,65 @@
+# Erdos minimum overlap - Claude Opus 4.6
+max_iterations: 300
+checkpoint_interval: 10
+log_level: "INFO"
+
+# LLM configuration
+llm:
+  primary_model: "claude-opus-4-6"
+  primary_model_weight: 1.0
+  api_base: "https://api.anthropic.com/v1"
+  api_key: "${ANTHROPIC_API_KEY}"
+  temperature: 0.7
+  max_tokens: 8192
+  timeout: 600
+
+# Prompt configuration
+prompt:
+  system_message: |
+    SETTING:
+    You are an expert in harmonic analysis, numerical optimization, and AI-driven mathematical discovery.
+    Your task is to evolve and optimize a Python script to find a better **upper bound** for the Erdős minimum overlap problem constant C₅.
+
+    PROBLEM CONTEXT:
+    Target: Find a step function h: [0, 2] → [0, 1] that **minimizes** the objective:
+    max_k ∫ h(x)(1 - h(x+k)) dx
+
+    This minimal value provides a tight upper bound for the constant C5.
+
+    Current best known upper bound: C5 ≤ 0.380871
+    Goal: Find a step function `h` that results in a C5 value lower than 0.380871.
+
+    CONSTRAINTS:
+    1. The function `h` must have values in the range [0, 1].
+    2. The integral of h(x) over [0, 2] must be exactly 1.
+
+    PERFORMANCE METRICS:
+    - c5_bound: The bound found by the program.
+    - combined_score: 0.380871 / c5_bound (The primary objective is to MAXIMIZE this value - a value > 1 means a new record).
+    - n_points: number of points used in the discretization.
+    - eval_time: evaluation time of the program.
+  num_top_programs: 3
+  num_diverse_programs: 2
+  use_template_stochasticity: true
+
+# Database configuration
+database:
+  population_size: 60
+  archive_size: 25
+  num_islands: 5
+  migration_interval: 40
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+# Evaluator configuration
+evaluator:
+  timeout: 360
+  max_retries: 3
+  cascade_evaluation: true
+  cascade_thresholds: [0.5, 0.75]
+  parallel_evaluations: 1
+  use_llm_feedback: false
+
+# Evolution settings
+diff_based_evolution: false
+allow_full_rewrites: true

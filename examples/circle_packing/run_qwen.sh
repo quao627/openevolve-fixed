@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+EXAMPLE_DIR="examples/circle_packing"
+OUTPUT_DIR="${EXAMPLE_DIR}/openevolve_output_qwen"
+
+# Phase 1: Exploration
+python openevolve-run.py \
+  "${EXAMPLE_DIR}/initial_program.py" \
+  "${EXAMPLE_DIR}/evaluator.py" \
+  --config "${EXAMPLE_DIR}/config_phase_1_qwen.yaml" \
+  --output "$OUTPUT_DIR" \
+  2>&1 | tee "${EXAMPLE_DIR}/evolution_qwen.log"
+
+# Find latest checkpoint
+LATEST_CKPT=$(ls -d "${OUTPUT_DIR}"/checkpoints/checkpoint_* 2>/dev/null \
+  | sort -V | tail -1)
+
+if [ -z "$LATEST_CKPT" ]; then
+  echo "ERROR: No checkpoint found after phase 1"
+  exit 1
+fi
+
+# Phase 2: Break through the plateau
+python openevolve-run.py \
+  "${LATEST_CKPT}/best_program.py" \
+  "${EXAMPLE_DIR}/evaluator.py" \
+  --config "${EXAMPLE_DIR}/config_phase_2_qwen.yaml" \
+  --checkpoint "$LATEST_CKPT" \
+  --output "$OUTPUT_DIR" \
+  2>&1 | tee -a "${EXAMPLE_DIR}/evolution_qwen.log"
