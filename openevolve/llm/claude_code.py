@@ -81,10 +81,9 @@ class ClaudeCodeLLM(LLMInterface):
         try:
             cmd = [
                 "claude",
-                "--print",  # Non-interactive, print response only
+                "-p",  # Print mode: non-interactive, read from stdin
                 "--model", self._model_flag,
                 "--max-turns", "1",
-                "--no-input",  # Don't wait for stdin
             ]
 
             logger.info(f"Calling Claude Code CLI: model={self._model_flag}")
