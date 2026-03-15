@@ -81,7 +81,7 @@ def _run_eval(submission_path: str, mode: str, specs: list[str], timeout: int = 
         env = os.environ.copy()
         env["POPCORN_FD"] = str(write_fd)
 
-        cmd = [sys.executable, "eval.py", mode, f"{mode}.txt"]
+        cmd = ["/usr/bin/python3", "eval.py", mode, f"{mode}.txt"]
 
         try:
             proc = subprocess.Popen(
