@@ -1,0 +1,86 @@
+# Spaceship Titanic Classification — Claude Opus 4.6
+max_iterations: 200
+checkpoint_interval: 10
+log_level: "INFO"
+
+# LLM configuration
+llm:
+  primary_model: "claude-opus-4-6"
+  primary_model_weight: 1.0
+  api_base: "https://api.anthropic.com/v1"
+  api_key: "${ANTHROPIC_API_KEY}"
+  temperature: 0.7
+  max_tokens: 16384
+  timeout: 600
+
+# Prompt configuration
+prompt:
+  system_message: |
+    You are an expert data scientist tasked with building a high-accuracy classifier
+    for the Spaceship Titanic binary classification task.
+
+    Welcome to the year 2912, where your data science skills are needed to solve a
+    cosmic mystery. The Spaceship Titanic was an interstellar passenger liner that
+    collided with a spacetime anomaly. Almost half of the passengers were transported
+    to an alternate dimension. Your task is to predict which passengers were transported.
+
+    **Data fields:**
+    - `PassengerId` — Unique Id (`gggg_pp` format: group + number within group)
+    - `HomePlanet` — Planet the passenger departed from
+    - `CryoSleep` — Whether the passenger was in suspended animation
+    - `Cabin` — Cabin number (`deck/num/side`, side is P for Port or S for Starboard)
+    - `Destination` — Planet the passenger is debarking to
+    - `Age` — Passenger age
+    - `VIP` — Whether the passenger paid for VIP service
+    - `RoomService`, `FoodCourt`, `ShoppingMall`, `Spa`, `VRDeck` — Billing amounts
+    - `Name` — First and last name
+    - `Transported` — Target (boolean): was the passenger transported?
+
+    **Your task:**
+    Implement feature engineering (`engineer_features`) and model building (`build_model`)
+    within the EVOLVE-BLOCK to maximize classification accuracy on the test set.
+
+    The `run(train_path, test_path)` function is fixed — it calls your feature engineering
+    and model building functions, then returns predictions as a DataFrame with columns
+    `PassengerId` and `Transported` (boolean).
+
+    **Evaluation:**
+    - Metric: classification accuracy (higher is better, 0–1 scale)
+    - Kaggle leaderboard (2288 teams): top score 0.82815, gold >= 0.821, silver >= 0.814, bronze >= 0.810
+    - A naive baseline (predict all False) scores ~0.50
+    - Good models score 0.78–0.80+. Top Kaggle scores exceed 0.82
+    - The eval timeout is 120s — keep training time reasonable
+
+    **Tips:**
+    - Consider advanced feature engineering: interaction features, group-level aggregations,
+      cabin parsing, spending patterns, missing value indicators
+    - Try different models: GradientBoosting, XGBoost, LightGBM, stacking ensembles
+    - Use cross-validation to avoid overfitting
+    - Feature selection can help: remove noisy features, keep informative ones
+    - Consider target encoding for high-cardinality categoricals
+    - Available libraries: pandas, numpy, sklearn, xgboost, lightgbm
+
+  num_top_programs: 3
+  num_diverse_programs: 2
+  use_template_stochasticity: true
+
+# Database configuration
+database:
+  population_size: 40
+  archive_size: 20
+  num_islands: 4
+  migration_interval: 30
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+# Evaluator configuration
+evaluator:
+  timeout: 180
+  max_retries: 2
+  cascade_evaluation: false
+  parallel_evaluations: 1
+  use_llm_feedback: false
+
+# Evolution settings
+diff_based_evolution: false
+allow_full_rewrites: true
