@@ -16,49 +16,70 @@ llm:
 # Prompt configuration
 prompt:
   system_message: |
-    You are an expert data scientist tasked with building a high-accuracy classifier
-    for the Spaceship Titanic binary classification task.
-
     Welcome to the year 2912, where your data science skills are needed to solve a
-    cosmic mystery. The Spaceship Titanic was an interstellar passenger liner that
-    collided with a spacetime anomaly. Almost half of the passengers were transported
-    to an alternate dimension. Your task is to predict which passengers were transported.
+    cosmic mystery. We've received a transmission from four lightyears away and things
+    aren't looking good.
 
-    **Data fields:**
-    - `PassengerId` — Unique Id (`gggg_pp` format: group + number within group)
-    - `HomePlanet` — Planet the passenger departed from
-    - `CryoSleep` — Whether the passenger was in suspended animation
-    - `Cabin` — Cabin number (`deck/num/side`, side is P for Port or S for Starboard)
-    - `Destination` — Planet the passenger is debarking to
-    - `Age` — Passenger age
-    - `VIP` — Whether the passenger paid for VIP service
-    - `RoomService`, `FoodCourt`, `ShoppingMall`, `Spa`, `VRDeck` — Billing amounts
-    - `Name` — First and last name
-    - `Transported` — Target (boolean): was the passenger transported?
+    The Spaceship Titanic was an interstellar passenger liner launched a month ago. With
+    almost 13,000 passengers on board, the vessel set out on its maiden voyage transporting
+    emigrants from our solar system to three newly habitable exoplanets orbiting nearby
+    stars.
 
-    **Your task:**
-    Implement feature engineering (`engineer_features`) and model building (`build_model`)
-    within the EVOLVE-BLOCK to maximize classification accuracy on the test set.
+    While rounding Alpha Centauri en route to its first destination — the torrid 55
+    Cancri E — the unwary Spaceship Titanic collided with a spacetime anomaly hidden
+    within a dust cloud. Sadly, it met a similar fate as its namesake from 1000 years
+    before. Though the ship stayed intact, almost half of the passengers were transported
+    to an alternate dimension!
 
-    The `run(train_path, test_path)` function is fixed — it calls your feature engineering
-    and model building functions, then returns predictions as a DataFrame with columns
-    `PassengerId` and `Transported` (boolean).
+    To help rescue crews and retrieve the lost passengers, you are challenged to predict
+    which passengers were transported by the anomaly using records recovered from the
+    spaceship's damaged computer system.
+
+    Your task is to predict whether a passenger was transported to an alternate dimension
+    during the Spaceship Titanic's collision with the spacetime anomaly. To help you make
+    these predictions, you're given a set of personal records recovered from the ship's
+    damaged computer system.
+
+    **File and Data Field Descriptions:**
+
+    - `train.csv` — Personal records for the passengers, to be used as training data.
+      - `PassengerId` — A unique Id for each passenger. Each Id takes the form `gggg_pp`
+        where `gggg` indicates a group the passenger is travelling with and `pp` is their
+        number within the group. People in a group are often family members, but not always.
+      - `HomePlanet` — The planet the passenger departed from, typically their planet of
+        permanent residence.
+      - `CryoSleep` — Indicates whether the passenger elected to be put into suspended
+        animation for the duration of the voyage. Passengers in cryosleep are confined to
+        their cabins.
+      - `Cabin` — The cabin number where the passenger is staying. Takes the form
+        `deck/num/side`, where `side` can be either `P` for Port or `S` for Starboard.
+      - `Destination` — The planet the passenger will be debarking to.
+      - `Age` — The age of the passenger.
+      - `VIP` — Whether the passenger has paid for special VIP service during the voyage.
+      - `RoomService`, `FoodCourt`, `ShoppingMall`, `Spa`, `VRDeck` — Amount the passenger
+        has billed at each of the Spaceship Titanic's many luxury amenities.
+      - `Name` — The first and last names of the passenger.
+      - `Transported` — Whether the passenger was transported to another dimension. This is
+        the target, the column you are trying to predict.
+    - `test.csv` — Personal records for the test passengers. Your task is to predict the
+      value of `Transported` for the passengers in this set.
+    - `sample_submission.csv` — A submission file in the correct format.
+      - `PassengerId` - Id for each passenger in the test set.
+      - `Transported` - The target. For each passenger, predict either `True` or `False`.
 
     **Evaluation:**
-    - Metric: classification accuracy (higher is better, 0–1 scale)
-    - Kaggle leaderboard (2288 teams): top score 0.82815, gold >= 0.821, silver >= 0.814, bronze >= 0.810
+
+    Submissions are evaluated based on classification accuracy, the percentage of predicted
+    labels that are correct.
+
+    **Your program** (`solution.py`) must define a `run(train_path, test_path)` function
+    that returns a pandas DataFrame with columns `PassengerId` and `Transported` (boolean).
+
+    - Metric is classification accuracy (higher is better, 0–1 scale)
+    - Kaggle leaderboard (2288 teams): top score 0.82815, gold ≥ 0.821, silver ≥ 0.814, bronze ≥ 0.810. You are aiming to beat the top score.
     - A naive baseline (predict all False) scores ~0.50
     - Good models score 0.78–0.80+. Top Kaggle scores exceed 0.82
     - The eval timeout is 120s — keep training time reasonable
-
-    **Tips:**
-    - Consider advanced feature engineering: interaction features, group-level aggregations,
-      cabin parsing, spending patterns, missing value indicators
-    - Try different models: GradientBoosting, XGBoost, LightGBM, stacking ensembles
-    - Use cross-validation to avoid overfitting
-    - Feature selection can help: remove noisy features, keep informative ones
-    - Consider target encoding for high-cardinality categoricals
-    - Available libraries: pandas, numpy, sklearn, xgboost, lightgbm
 
   num_top_programs: 3
   num_diverse_programs: 2
@@ -75,7 +96,7 @@ database:
 
 # Evaluator configuration
 evaluator:
-  timeout: 180
+  timeout: 120
   max_retries: 2
   cascade_evaluation: false
   parallel_evaluations: 1
