@@ -105,3 +105,4 @@ evaluator:
 # Evolution settings
 diff_based_evolution: false
 allow_full_rewrites: true
+max_code_length: 32000
