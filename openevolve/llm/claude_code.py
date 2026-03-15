@@ -8,7 +8,6 @@ allowing OpenEvolve to run on a Claude subscription instead of paying per-token.
 import asyncio
 import json
 import logging
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -16,6 +15,12 @@ from typing import Any, Dict, List, Optional
 from openevolve.llm.base import LLMInterface
 
 logger = logging.getLogger(__name__)
+
+# Appended to every user prompt to ensure code output format
+OUTPUT_FORMAT_INSTRUCTION = """
+
+IMPORTANT: You must respond with the complete evolved Python program wrapped in a ```python code block. Output ONLY the code block — no explanations, no commentary before or after. The code block must contain the COMPLETE program (all imports, all functions, everything).
+"""
 
 
 class ClaudeCodeLLM(LLMInterface):
@@ -55,40 +60,34 @@ class ClaudeCodeLLM(LLMInterface):
         self, system_message: str, messages: List[Dict[str, str]], **kwargs
     ) -> str:
         """Generate text using Claude Code CLI."""
-        # Build the full prompt: system message + user messages
-        parts = []
-        if system_message:
-            parts.append(system_message)
+        # Build user prompt from messages
+        user_parts = []
         for msg in messages:
             content = msg.get("content", "")
             if content:
-                parts.append(content)
-        full_prompt = "\n\n".join(parts)
+                user_parts.append(content)
+        user_prompt = "\n\n".join(user_parts) + OUTPUT_FORMAT_INSTRUCTION
 
-        # Run claude CLI in non-interactive mode
-        response = await self._call_claude(full_prompt)
+        # Run claude CLI with system prompt and user prompt
+        response = await self._call_claude(system_message, user_prompt)
         return response
 
-    async def _call_claude(self, prompt: str) -> str:
+    async def _call_claude(self, system_message: str, user_prompt: str) -> str:
         """Call the claude CLI and return the response text."""
-        # Write prompt to a temp file to avoid shell escaping issues
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, prefix="oe_prompt_"
-        ) as f:
-            f.write(prompt)
-            prompt_file = f.name
+        cmd = [
+            "claude",
+            "-p",  # Print mode: non-interactive, read prompt from stdin
+            "--model", self._model_flag,
+            "--max-turns", "1",
+        ]
+
+        # Add system prompt if provided
+        if system_message:
+            cmd.extend(["--system-prompt", system_message])
+
+        logger.info(f"Calling Claude Code CLI: model={self._model_flag}, prompt_len={len(user_prompt)}")
 
         try:
-            cmd = [
-                "claude",
-                "-p",  # Print mode: non-interactive, read from stdin
-                "--model", self._model_flag,
-                "--max-turns", "1",
-            ]
-
-            logger.info(f"Calling Claude Code CLI: model={self._model_flag}")
-
-            # Read prompt from file and pipe to claude
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdin=asyncio.subprocess.PIPE,
@@ -97,7 +96,7 @@ class ClaudeCodeLLM(LLMInterface):
             )
 
             stdout, stderr = await asyncio.wait_for(
-                proc.communicate(input=prompt.encode("utf-8")),
+                proc.communicate(input=user_prompt.encode("utf-8")),
                 timeout=self.timeout,
             )
 
@@ -118,8 +117,6 @@ class ClaudeCodeLLM(LLMInterface):
         except asyncio.TimeoutError:
             logger.error(f"Claude Code CLI timed out after {self.timeout}s")
             raise RuntimeError(f"Claude Code CLI timed out after {self.timeout}s")
-        finally:
-            Path(prompt_file).unlink(missing_ok=True)
 
 
 def init_claude_code_client(model_cfg) -> ClaudeCodeLLM:
