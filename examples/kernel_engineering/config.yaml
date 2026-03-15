@@ -133,6 +133,14 @@ prompt:
 
     Correctness tolerances: rtol=2e-2, atol=2e-2.
     Score = 1000 / geometric_mean(runtime_us). Higher score is better.
+
+    **Tips:**
+    - Use @triton.jit kernels for fused operations
+    - The einsum is O(N^3) — this is the main bottleneck
+    - Consider fusing LayerNorm + projections + gating
+    - Use mixed precision (compute in fp32, store in bf16/fp16) where safe
+    - Triton 3.3.0 on H100, tl.arange needs constexpr + power-of-2 range
+    - You must implement at least part of the operations as a Triton kernel
   num_top_programs: 3
   num_diverse_programs: 2
   use_template_stochasticity: true
