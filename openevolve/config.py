@@ -424,7 +424,7 @@ class Config:
 
     # Evolution settings
     diff_based_evolution: bool = True
-    max_code_length: int = 10000
+    max_code_length: int = 32784
     diff_pattern: str = r"<<<<<<< SEARCH\n(.*?)=======\n(.*?)>>>>>>> REPLACE"
 
     # Early stopping settings
