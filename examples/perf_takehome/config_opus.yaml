@@ -1,0 +1,99 @@
+# Performance Take-Home - Claude Opus 4.6
+max_iterations: 300
+checkpoint_interval: 10
+log_level: "INFO"
+
+# LLM configuration
+llm:
+  primary_model: "claude-opus-4-6"
+  primary_model_weight: 1.0
+  api_base: "https://api.anthropic.com/v1"
+  api_key: "${ANTHROPIC_API_KEY}"
+  temperature: 0.7
+  max_tokens: 32768
+  timeout: 600
+
+# Prompt configuration
+prompt:
+  system_message: |
+    SETTING:
+    You are an expert in low-level performance optimization, instruction scheduling, VLIW architectures, and SIMD vectorization.
+    Your task is to evolve and optimize a KernelBuilder.build_kernel() method that generates machine instructions
+    for a simulated VLIW SIMD processor to minimize CPU cycle count.
+
+    PROBLEM CONTEXT:
+    The kernel performs a parallel tree traversal:
+    - Binary tree of height 10 with 256 batch inputs, 16 rounds
+    - At each node: val = hash(val ^ node_val), then branch left/right based on parity
+    - Wrap back to root when reaching bottom
+
+    ARCHITECTURE:
+    The simulated VLIW SIMD processor has these slot limits per cycle:
+      - ALU: 12 scalar operations (32-bit integer: +, -, *, /, %, ^, &, |, <<, >>, ==, !=, <, >, <=, >=, multiply_add)
+      - VALU: 6 vector operations (8-element SIMD, same ops as ALU but on vectors)
+      - Load: 2 memory reads (load, const, vload, vbroadcast)
+      - Store: 2 memory writes (store, vstore)
+      - Flow: 1 control flow (select, vselect, jump, cond_jump, halt, pause)
+      - Debug: 64 (ignored in scoring)
+
+    VLIW means all slots in one instruction bundle execute in parallel within the same cycle.
+    Effects are applied atomically at end of cycle (you can read and write the same address).
+    An instruction bundle is a dict: {"alu": [slot1, slot2, ...], "load": [slot1, ...], ...}
+
+    SIMD: VLEN=8. Use vload/vstore for contiguous 8-word access, vbroadcast to fill a vector from scalar.
+    Scratch space: 1536 words. Vector registers need 8 contiguous scratch words.
+
+    HASH FUNCTION (6 stages, each stage computes):
+      tmp1 = op1(val, constant1)
+      tmp2 = op3(val, constant3)
+      val = op2(tmp1, tmp2)
+
+    KEY OPTIMIZATION TECHNIQUES:
+    1. SIMD vectorization: Process 8 batch elements per vector instruction instead of 1 scalar
+    2. VLIW packing: Pack multiple independent operations into a single cycle
+    3. Loop unrolling: Unroll the batch loop to expose more ILP
+    4. Instruction scheduling: Build a dependency graph, then schedule instructions to maximize parallelism
+    5. multiply_add fusion: Some hash stages can use multiply_add to save instructions
+    6. Minimize loads: Preload constants, reuse scratch values, derive constants from each other
+    7. Use separate temp registers per iteration to eliminate write-after-write dependencies
+
+    PERFORMANCE METRICS:
+    - cycles: Number of CPU cycles (lower is better)
+    - combined_score: BASELINE / cycles = speedup factor (higher is better, BASELINE=147734)
+    - normalized_score: How close to best known (1.0 = matches best known of 1363 cycles)
+
+    IMPORTANT CONSTRAINTS:
+    - The build() method must produce valid instruction bundles respecting SLOT_LIMITS
+    - Output must be bit-exact correct across random seeds
+    - Scratch space is limited to 1536 words
+
+    MILESTONES:
+    - Naive scalar baseline: 147,734 cycles (1x)
+    - With basic VLIW packing: ~18,532 cycles (8x)
+    - With SIMD vectorization: ~2,164 cycles (68x)
+    - With full scheduling: ~1,363 cycles (108x)
+  num_top_programs: 3
+  num_diverse_programs: 2
+  use_template_stochasticity: true
+
+# Database configuration
+database:
+  population_size: 60
+  archive_size: 25
+  num_islands: 5
+  migration_interval: 40
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+# Evaluator configuration
+evaluator:
+  timeout: 600
+  max_retries: 3
+  cascade_evaluation: true
+  cascade_thresholds: [0.5, 2.0]
+  parallel_evaluations: 1
+  use_llm_feedback: false
+
+# Evolution settings
+diff_based_evolution: false
+allow_full_rewrites: true
